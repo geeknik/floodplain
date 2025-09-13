@@ -1,20 +1,17 @@
-<a href="https://www.spiderfoot.net/r.php?u=aHR0cHM6Ly93d3cuc3BpZGVyZm9vdC5uZXQv&s=os_gh"><img src="https://www.spiderfoot.net/wp-content/themes/spiderfoot/img/spiderfoot-wide.png"></a>
+<a href="https://www.Floodplain.net/r.php?u=aHR0cHM6Ly93d3cuc3BpZGVyZm9vdC5uZXQv&s=os_gh"><img src="https://www.Floodplain.net/wp-content/themes/Floodplain/img/Floodplain-wide.png"></a>
 
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/smicallef/spiderfoot/master/LICENSE)
-[![Python Version](https://img.shields.io/badge/python-3.7+-green)](https://www.python.org)
-[![Stable Release](https://img.shields.io/badge/version-4.0-blue.svg)](https://github.com/smicallef/spiderfoot/releases/tag/v4.0)
-[![CI status](https://github.com/smicallef/spiderfoot/workflows/Tests/badge.svg)](https://github.com/smicallef/spiderfoot/actions?query=workflow%3A"Tests")
-[![Last Commit](https://img.shields.io/github/last-commit/smicallef/spiderfoot)](https://github.com/smicallef/spiderfoot/commits/master)
-[![Codecov](https://codecov.io/github/smicallef/spiderfoot/coverage.svg)](https://codecov.io/github/smicallef/spiderfoot)
-[![Twitter Follow](https://img.shields.io/twitter/follow/spiderfoot?label=follow&style=social)](https://twitter.com/spiderfoot)
-[![Discord](https://img.shields.io/discord/770524432464216074)](https://discord.gg/vyvztrG)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/geeknik/floodplain/master/LICENSE)
+[![Python Version](https://img.shields.io/badge/python-3.10+-green)](https://www.python.org)
+[![Stable Release](https://img.shields.io/badge/version-4.0-blue.svg)](https://github.com/geeknik/floodplain/releases/tag/v4.0)
+[![CI status](https://github.com/geeknik/floodplain/workflows/Tests/badge.svg)](https://github.com/geeknik/floodplain/actions?query=workflow%3A"Tests")
+[![Last Commit](https://img.shields.io/github/last-commit/geeknik/floodplain)](https://github.com/geeknik/floodplain/commits/master)
+[![Codecov](https://codecov.io/github/geeknik/floodplain/coverage.svg)](https://codecov.io/github/geeknik/floodplain)
+[![Twitter Follow](https://img.shields.io/twitter/follow/geeknik?label=follow&style=social)](https://x.com/geeknik)
 
-**SpiderFoot** is an open source intelligence (OSINT) automation tool. It integrates with just about every data source available and utilises a range of methods for data analysis, making that data easy to navigate. 
+**Floodplain** is an open source intelligence (OSINT) automation tool. It integrates with just about every data source available and utilises a range of methods for data analysis, making that data easy to navigate. 
 
-SpiderFoot has an embedded web-server for providing a clean and intuitive web-based interface but can also be used completely via the command-line.  It's written in **Python 3** and **MIT-licensed**.
-
-<img src="https://www.spiderfoot.net/wp-content/uploads/2022/04/opensource-screenshot-v4.png" />
+Floodplain has an embedded web-server for providing a clean and intuitive web-based interface but can also be used completely via the command-line.  It's written in **Python 3** and **MIT-licensed**.
 
 ### FEATURES
 
@@ -31,32 +28,13 @@ SpiderFoot has an embedded web-server for providing a clean and intuitive web-ba
 - TOR integration for dark web searching
 - Dockerfile for Docker-based deployments
 - Can call other tools like DNSTwist, Whatweb, Nmap and CMSeeK
-- [Actively developed since 2012!](https://medium.com/@micallst/lessons-learned-from-my-10-year-open-source-project-4a4c8c2b4f64)
-
-### WANT MORE?
-
-Need more from SpiderFoot? Check out [SpiderFoot HX](https://www.spiderfoot.net/hx) for:
-- 100% Cloud-based and managed for you
-- Attack Surface Monitoring with change notifications by email, REST and Slack
-- Multiple targets per scan
-- Multi-user collaboration
-- Authenticated and 2FA
-- Investigations
-- Customer support
-- Third party tools pre-installed & configured
-- Drive it with a fully RESTful API
-- TOR integration built-in
-- Screenshotting
-- Bring your own Python SpiderFoot modules
-- Feed scan data to Splunk, ElasticSearch and REST endpoints
-
-See the full set of differences between SpiderFoot HX and the open source version [here](https://www.spiderfoot.net/open-source-vs-hx/).
+- [Actively developed by the OG author @smicallef from 2012-2021ish](https://medium.com/@micallst/lessons-learned-from-my-10-year-open-source-project-4a4c8c2b4f64)
 
 ### USES
 
-SpiderFoot can be used offensively (e.g. in a red team exercise or penetration test) for reconnaissance of your target or defensively to gather information about what you or your organisation might have exposed over the Internet.
+Floodplain can be used offensively (e.g. in a red team exercise or penetration test) for reconnaissance of your target or defensively to gather information about what you or your organisation might have exposed over the Internet.
 
-You can target the following entities in a SpiderFoot scan:
+You can target the following entities in a Floodplain scan:
 
  - IP address
  - Domain/sub-domain name
@@ -69,7 +47,7 @@ You can target the following entities in a SpiderFoot scan:
  - Person's name
  - Bitcoin address
  
-SpiderFoot's 200+ modules feed each other in a publisher/subscriber model to ensure maximum data extraction to do things like:
+Floodplain's 200+ modules feed each other in a publisher/subscriber model to ensure maximum data extraction to do things like:
 
 - [Host/sub-domain/TLD enumeration/extraction](https://asciinema.org/a/295912)
 - [Email address, phone number and human name extraction](https://asciinema.org/a/295947)
@@ -90,14 +68,14 @@ SpiderFoot's 200+ modules feed each other in a publisher/subscriber model to ens
 
 ### INSTALLING & RUNNING
 
-To install and run SpiderFoot, you need at least Python 3.7 and a number of Python libraries which you can install with `pip`. We recommend you install a packaged release since master will often have bleeding edge features and modules that aren't fully tested.
+To install and run Floodplain, you need at least Python 3.10 and a number of Python libraries which you can install with `pip`. We recommend you install a packaged release since master will often have bleeding edge features and modules that aren't fully tested.
 
 #### Stable build (packaged release):
 
 ```
- wget https://github.com/smicallef/spiderfoot/archive/v4.0.tar.gz
+ wget https://github.com/geeknik/Floodplain/archive/v4.0.tar.gz
  tar zxvf v4.0.tar.gz
- cd spiderfoot-4.0
+ cd Floodplain-4.0
  pip3 install -r requirements.txt
  python3 ./sf.py -l 127.0.0.1:5001
 ```
@@ -105,27 +83,21 @@ To install and run SpiderFoot, you need at least Python 3.7 and a number of Pyth
 #### Development build (cloning git master branch):
 
 ```
- git clone https://github.com/smicallef/spiderfoot.git
- cd spiderfoot
+ git clone https://github.com/geeknik/Floodplain.git
+ cd Floodplain
  pip3 install -r requirements.txt
  python3 ./sf.py -l 127.0.0.1:5001
 ```
 
-Check out the [documentation](https://www.spiderfoot.net/documentation) and our [asciinema videos](https://asciinema.org/~spiderfoot) for more tutorials.
-
-### COMMUNITY
-
-Whether you're a contributor, user or just curious about SpiderFoot and OSINT in general, we'd love to have you join our community! SpiderFoot now has a [Discord server](https://discord.gg/vyvztrG) for seeking help from the community, requesting features or just general OSINT chit-chat.
-
 ### WRITING CORRELATION RULES
 
-We have a comprehensive write-up and reference of the correlation rule-set introduced in SpiderFoot 4.0 [here](/correlations/README.md).
+There exists a comprehensive write-up and reference of the correlation rule-set introduced in SpiderFoot 4.0 [here](/correlations/README.md).
 
 Also take a look at the [template.yaml](/correlations/template.yaml) file for a walk through. The existing [37 rules](/correlations) are also quite readable and good as starting points for additional rules.
 
 ### MODULES / INTEGRATIONS
 
-SpiderFoot has over 200 modules, most of which *don't require API keys*, and many of those that do require API keys *have a free tier*.
+Floodplain has over 200 modules, most of which *don't require API keys*, and many of those that do require API keys *have a free tier*.
 
 | Name     | Description | Type   |
 |:---------| :-----------|:-------|
@@ -358,9 +330,3 @@ Whois|Perform a WHOIS look-up on domain names and owned netblocks.|Internal
 [Zetalytics](https://zetalytics.com/)|Query the Zetalytics database for hosts on your target domain(s).|Tiered API
 [ZoneFile.io](https://zonefiles.io)|Search ZoneFiles.io Domain query API for domain information.|Tiered API
 [Zone-H Defacement Check](https://zone-h.org/)|Check if a hostname/domain appears on the zone-h.org 'special defacements' RSS feed.|Free API
-
-### DOCUMENTATION
-
-Read more at the [project website](https://www.spiderfoot.net/r.php?u=aHR0cHM6Ly93d3cuc3BpZGVyZm9vdC5uZXQv&s=os_gh), including more complete documentation, blog posts with tutorials/guides, plus information about [SpiderFoot HX](https://www.spiderfoot.net/r.php?u=aHR0cHM6Ly93d3cuc3BpZGVyZm9vdC5uZXQvaHgvCg==&s=os_gh).
-
-Latest updates announced on [Twitter](https://twitter.com/spiderfoot).
