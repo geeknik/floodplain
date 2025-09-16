@@ -28,7 +28,7 @@ Floodplain has an embedded web-server for providing a clean and intuitive web-ba
 - TOR integration for dark web searching
 - Dockerfile for Docker-based deployments
 - Can call other tools like DNSTwist, Whatweb, Nmap and CMSeeK
-- [Actively developed by the OG author @smicallef from 2012-2021ish](https://medium.com/@micallst/lessons-learned-from-my-10-year-open-source-project-4a4c8c2b4f64)
+- [Actively developed by the OG author @smicallef from 2012-2022](https://medium.com/@micallst/lessons-learned-from-my-10-year-open-source-project-4a4c8c2b4f64)
 
 ### USES
 
