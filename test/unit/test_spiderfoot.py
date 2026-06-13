@@ -1,6 +1,7 @@
 # test_spiderfoot.py
 import pytest
 import unittest
+from unittest.mock import patch
 
 from sflib import SpiderFoot
 
@@ -487,7 +488,10 @@ class TestSpiderFoot(unittest.TestCase):
     def test_resolve_host_should_return_list(self):
         sf = SpiderFoot(self.default_options)
 
-        addrs = sf.resolveHost('one.one.one.one')
+        # Mock DNS so the test is deterministic and network-independent (CI runners
+        # have flaky/variable external DNS).
+        with patch('sflib.socket.gethostbyname_ex', return_value=('one.one.one.one', [], ['1.1.1.1'])):
+            addrs = sf.resolveHost('one.one.one.one')
         self.assertIsInstance(addrs, list)
         self.assertTrue(addrs)
         self.assertIn('1.1.1.1', addrs)
@@ -499,15 +503,17 @@ class TestSpiderFoot(unittest.TestCase):
     def test_resolve_ip_should_return_list(self):
         sf = SpiderFoot(self.default_options)
 
-        addrs = sf.resolveIP('1.1.1.1')
-        self.assertIsInstance(addrs, list)
-        self.assertTrue(addrs)
-        self.assertIn('one.one.one.one', addrs)
+        # Mock reverse DNS so the test is deterministic and network-independent.
+        with patch('sflib.socket.gethostbyaddr', return_value=('one.one.one.one', [], ['1.1.1.1'])):
+            addrs = sf.resolveIP('1.1.1.1')
+            self.assertIsInstance(addrs, list)
+            self.assertTrue(addrs)
+            self.assertIn('one.one.one.one', addrs)
 
-        addrs = sf.resolveIP('2606:4700:4700::1001')
-        self.assertIsInstance(addrs, list)
-        self.assertTrue(addrs)
-        self.assertIn('one.one.one.one', addrs)
+            addrs = sf.resolveIP('2606:4700:4700::1001')
+            self.assertIsInstance(addrs, list)
+            self.assertTrue(addrs)
+            self.assertIn('one.one.one.one', addrs)
 
         addrs = sf.resolveIP(None)
         self.assertFalse(addrs)
@@ -524,13 +530,14 @@ class TestSpiderFoot(unittest.TestCase):
     def test_resolve_host6_should_return_a_list(self):
         sf = SpiderFoot(self.default_options)
 
-        addrs = sf.resolveHost6('one.one.one.one')
+        # Mock DNS (getaddrinfo) so the test is deterministic and does not depend
+        # on external IPv6 resolution, which is unavailable on some CI runners.
+        ipv6_getaddrinfo = [(0, 0, 0, '', ('2606:4700:4700::1001', 0, 0, 0))]
+        with patch('sflib.socket.getaddrinfo', return_value=ipv6_getaddrinfo):
+            addrs = sf.resolveHost6('one.one.one.one')
         self.assertIsInstance(addrs, list)
         self.assertTrue(addrs)
-        # TODO: Re-enable this once GitHub runners support IPv6
-        # https://github.com/actions/virtual-environments/issues/668
-        # self.assertIn('2606:4700:4700::1001', addrs)
-        # self.assertIn('2606:4700:4700::1111', addrs)
+        self.assertIn('2606:4700:4700::1001', addrs)
 
         addrs = sf.resolveHost6(None)
         self.assertFalse(addrs)
@@ -543,7 +550,9 @@ class TestSpiderFoot(unittest.TestCase):
         self.assertIsInstance(validate_ip, bool)
         self.assertFalse(validate_ip)
 
-        validate_ip = sf.validateIP('one.one.one.one', '1.1.1.1')
+        # Mock DNS so the test is deterministic and network-independent.
+        with patch('sflib.socket.gethostbyname_ex', return_value=('one.one.one.one', [], ['1.1.1.1'])):
+            validate_ip = sf.validateIP('one.one.one.one', '1.1.1.1')
         self.assertIsInstance(validate_ip, bool)
         self.assertTrue(validate_ip)
 
