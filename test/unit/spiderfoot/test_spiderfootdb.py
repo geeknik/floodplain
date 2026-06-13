@@ -1281,3 +1281,38 @@ class TestSpiderFootDb(unittest.TestCase):
             with self.subTest(invalid_type=invalid_type):
                 with self.assertRaises(TypeError):
                     sfdb.correlationResultCreate("", "", "", "", "", "", invalid_type, [])
+
+    def test_schema_foreign_keys_reference_existing_tables(self):
+        """All schema FOREIGN KEY clauses must reference a table the schema creates.
+
+        Regression test for the 'tbl_scan_instances' (plural) typo in
+        tbl_scan_correlation_results: it referenced a table that does not exist
+        and would break every correlation-result insert if SQLite foreign-key
+        enforcement were ever enabled.
+        """
+        import sqlite3
+
+        conn = sqlite3.connect(":memory:")
+        try:
+            cur = conn.cursor()
+            for query in SpiderFootDb.createSchemaQueries:
+                cur.execute(query)
+            conn.commit()
+
+            cur.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+            tables = {row[0] for row in cur.fetchall()}
+
+            dangling = []
+            for table in tables:
+                for fk in cur.execute(f"PRAGMA foreign_key_list('{table}')").fetchall():
+                    referenced_table = fk[2]
+                    if referenced_table not in tables:
+                        dangling.append((table, referenced_table))
+
+            self.assertEqual(
+                dangling,
+                [],
+                f"Schema has foreign keys referencing non-existent tables: {dangling}",
+            )
+        finally:
+            conn.close()

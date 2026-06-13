@@ -403,9 +403,9 @@ class SpiderFootWebUi:
                 rows.append([rule_name, correlation, rule_risk, rule_description])
 
             if scan_name:
-                fname = f"{scan_name}-SpiderFoot-correlations.xlxs"
+                fname = f"{scan_name}-SpiderFoot-correlations.xlsx"
             else:
-                fname = "SpiderFoot-correlations.xlxs"
+                fname = "SpiderFoot-correlations.xlsx"
 
             cherrypy.response.headers['Content-Disposition'] = f"attachment; filename={fname}"
             cherrypy.response.headers['Content-Type'] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
