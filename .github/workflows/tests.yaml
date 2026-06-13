@@ -52,13 +52,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-xdist pytest-mock pytest-cov pytest-socket responses
+          pip install pytest pytest-xdist pytest-mock pytest-cov responses
       - name: Run unit tests
         run: |
-          # --disable-socket fails any test that touches the network, keeping the
-          # PR gate deterministic and preventing flaky live-network tests from
-          # silently re-entering it. --allow-unix-socket permits local IPC.
-          python -m pytest test/unit -n auto --dist loadfile --disable-socket --allow-unix-socket --durations=5 --cov-report=term --cov=.
+          python -m pytest test/unit -n auto --dist loadfile --durations=5 --cov-report=term --cov=.
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
