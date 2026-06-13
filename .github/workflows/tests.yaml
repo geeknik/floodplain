@@ -29,6 +29,9 @@ jobs:
           # stop the build if there are Python Flake8 violations
           flake8 . --count --show-source --statistics
 
+  # PR-gating job: deterministic unit tests only. Integration tests (which spawn
+  # subprocesses, start a web server, and do live network) run separately in
+  # integration.yaml so their inherent flakiness never blocks PR merges.
   test:
     name: Test (py${{ matrix.python-version }} / ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -50,9 +53,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-xdist pytest-mock pytest-cov responses
-      - name: Test with pytest
+      - name: Run unit tests
         run: |
-          python -m pytest -n auto --dist loadfile --ignore=test/integration/modules/ --durations=5 --cov-report=term --cov=. .
+          python -m pytest test/unit -n auto --dist loadfile --durations=5 --cov-report=term --cov=.
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:

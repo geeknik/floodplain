@@ -1,5 +1,6 @@
 import pytest
 import unittest
+from unittest.mock import patch
 
 from modules.sfp_tool_trufflehog import sfp_tool_trufflehog
 from sflib import SpiderFoot
@@ -47,3 +48,27 @@ class TestModuleToolTrufflehog(unittest.TestCase):
 
         self.assertIsNone(result)
         self.assertTrue(module.errorState)
+
+    def test_handleEvent_malicious_repo_url_should_not_invoke_subprocess(self):
+        """A crafted event whose extracted repository URL begins with '-' (or
+        contains whitespace) must be refused and never reach the subprocess,
+        preventing command-line argument injection into trufflehog."""
+        sf = SpiderFoot(self.default_options)
+
+        module = sfp_tool_trufflehog()
+        module.setup(sf, {'trufflehog_path': '/usr/bin/trufflehog'})
+
+        target = SpiderFootTarget('example.com', 'INTERNET_NAME')
+        module.setTarget(target)
+
+        root = SpiderFootEvent('ROOT', 'example.com', '', '')
+        # Contains "github.com/" so extraction is attempted, but the extracted
+        # value starts with '-' and contains a space, so it must be refused.
+        malicious = 'Github: --proxy=http://evil https://github.com/x'
+        evt = SpiderFootEvent('SOCIAL_MEDIA', malicious, 'test', root)
+
+        with patch('modules.sfp_tool_trufflehog.os.path.isfile', return_value=True), \
+             patch('modules.sfp_tool_trufflehog.Popen') as mock_popen:
+            module.handleEvent(evt)
+
+        mock_popen.assert_not_called()
