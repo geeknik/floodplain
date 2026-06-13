@@ -15,6 +15,7 @@ import sys
 import json
 import os
 from subprocess import PIPE, Popen, TimeoutExpired
+from urllib.parse import urlparse
 
 from spiderfoot import SpiderFootPlugin, SpiderFootEvent
 
@@ -123,6 +124,15 @@ class sfp_tool_trufflehog(SpiderFootPlugin):
         url = url.strip()
         if " " in url or not url.lower().startswith(("http://", "https://")):
             self.debug(f"Refusing to scan malformed repository URL: {url}")
+            return
+
+        # Validate the parsed hostname against an allowlist rather than relying on
+        # a substring match of the raw event data, which would also accept hosts
+        # like github.com.evil.com or evil.com/github.com.
+        host = (urlparse(url).hostname or "").lower()
+        allowed_domains = ("github.com", "gitlab.com", "bitbucket.org")
+        if host not in allowed_domains and not any(host.endswith("." + d) for d in allowed_domains):
+            self.debug(f"Refusing to scan non-allowlisted repository host: {host}")
             return
 
         if url in self.results:

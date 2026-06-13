@@ -966,10 +966,18 @@ class SpiderFoot:
         Returns:
             sock
         """
+        # Use a modern TLS context. ssl.wrap_socket() uses an insecure default
+        # protocol and was removed in Python 3.12. Certificate verification is
+        # intentionally disabled here because this helper inspects the
+        # certificates of arbitrary OSINT targets, many of which legitimately
+        # present invalid or self-signed certificates.
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE  # noqa: DUO122  (intentional: this helper inspects arbitrary targets' certs)
         s = socket.socket()
         s.settimeout(int(timeout))
         s.connect((host, int(port)))
-        sock = ssl.wrap_socket(s)
+        sock = context.wrap_socket(s, server_hostname=host)
         sock.do_handshake()
         return sock
 

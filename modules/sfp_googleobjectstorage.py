@@ -162,8 +162,9 @@ class sfp_googleobjectstorage(SpiderFootPlugin):
         self.debug(f"Received event, {eventName}, from {srcModuleName}")
 
         if eventName == "LINKED_URL_EXTERNAL":
-            if ".storage.googleapis.com" in eventData:
-                b = self.sf.urlFQDN(eventData)
+            b = self.sf.urlFQDN(eventData)
+            # Check the parsed hostname, not a substring of the whole URL.
+            if b and (b == "storage.googleapis.com" or b.endswith(".storage.googleapis.com")):
                 evt = SpiderFootEvent("CLOUD_STORAGE_BUCKET", b, self.__name__, event)
                 self.notifyListeners(evt)
             return
