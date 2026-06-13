@@ -4,9 +4,9 @@ If you can provide an application stack trace that is even better.
 
 What version of Python are you using?
 
-What version of SpiderFoot are you using (stable release or Git `master` branch)?
+What version of floodplain are you using (stable release or Git `master` branch)?
 
 You may also wish to check if your issue has been posted previously:
 
-* https://github.com/smicallef/spiderfoot/issues
+* https://github.com/geeknik/floodplain/issues
 
