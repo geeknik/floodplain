@@ -111,6 +111,7 @@ class TestSf(unittest.TestCase):
         self.assertIn(b"Based on your criteria, no modules were enabled", err)
         self.assertEqual(255, code)
 
+    @unittest.skip("Runs a live network scan of an external host; non-deterministic in CI (DNS/timing/module network variance). Tracked for a mocked end-to-end replacement.")
     def test_run_scan_should_run_scan_and_exit(self):
         target = "spiderfoot.net"
         out, err, code = self.execute([sys.executable, "sf.py", "-m", ",".join(self.default_modules), "-s", target])
