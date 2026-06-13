@@ -93,24 +93,23 @@ class sfp_tool_trufflehog(SpiderFootPlugin):
             self.errorState = True
             return
 
+        # Extract the candidate repository URL from the event data. We deliberately
+        # do NOT pre-filter on a raw substring such as `"github.com/" in eventData`:
+        # that check is satisfied by hostile values like
+        # https://evil.com/?x=github.com/ or https://github.com.evil.com/, so it is
+        # not a sound trust boundary (CWE-20, incomplete URL substring sanitization).
+        # The parsed-hostname allowlist below is the single authoritative gate.
         if eventName == "SOCIAL_MEDIA":
-            if "github.com/" in eventData.lower() or "gitlab.com/" in eventData.lower() or "bitbucket.org/" in eventData.lower():
-                try:
-                    url = eventData.split(": ")[1].replace("<SFURL>", "").replace("</SFURL>", "")
-                except BaseException:
-                    self.debug("Unable to extract repository URL, skipping.")
-                    return
-            else:
+            try:
+                url = eventData.split(": ")[1].replace("<SFURL>", "").replace("</SFURL>", "")
+            except BaseException:
+                self.debug("Unable to extract repository URL, skipping.")
                 return
-
-        if eventName == "PUBLIC_CODE_REPO" and self.opts['allrepos']:
-            if "github.com/" in eventData.lower() or "gitlab.com/" in eventData.lower() or "bitbucket.org/" in eventData.lower():
-                try:
-                    url = eventData.split("\n")[1].replace("URL: ", "")
-                except BaseException:
-                    self.debug("Unable to extract repository URL, skipping.")
-                    return
-            else:
+        elif eventName == "PUBLIC_CODE_REPO" and self.opts['allrepos']:
+            try:
+                url = eventData.split("\n")[1].replace("URL: ", "")
+            except BaseException:
+                self.debug("Unable to extract repository URL, skipping.")
                 return
 
         if not url:

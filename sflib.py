@@ -972,6 +972,10 @@ class SpiderFoot:
         # certificates of arbitrary OSINT targets, many of which legitimately
         # present invalid or self-signed certificates.
         context = ssl.create_default_context()
+        # Pin a modern TLS floor. create_default_context() otherwise negotiates
+        # down to TLS 1.0/1.1, which are deprecated and insecure (AETHER doctrine
+        # §4); TLS 1.2 is the lowest acceptable version for inspecting targets.
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE  # noqa: DUO122  (intentional: this helper inspects arbitrary targets' certs)
         s = socket.socket()
