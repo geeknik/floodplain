@@ -994,8 +994,7 @@ class SpiderFoot:
         if isinstance(rawcert, str):
             rawcert = rawcert.encode('utf-8')
 
-        from cryptography.hazmat.backends.openssl import backend
-        cert = cryptography.x509.load_pem_x509_certificate(rawcert, backend)
+        cert = cryptography.x509.load_pem_x509_certificate(rawcert)
         sslcert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, rawcert)
         sslcert_dump = OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_TEXT, sslcert)
 

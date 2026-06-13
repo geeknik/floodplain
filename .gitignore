@@ -173,3 +173,39 @@ cover/
 # Documentation #
 #################
 docs/_build/
+
+# Secrets & credentials (AETHER doctrine §3 — never commit credentials) #
+########################################################################
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.keystore
+secrets.*
+*.secret
+*_secret*
+api_keys.*
+apikeys.*
+credentials.*
+.netrc
+
+# Floodplain runtime artifacts #
+################################
+/floodplain.db*
+floodplain.crt
+floodplain.key
+/cache/
+/log/
+
+# Python tooling #
+##################
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+pip-wheel-metadata/
+.python-version
+*.orig

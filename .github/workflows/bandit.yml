@@ -1,0 +1,39 @@
+name: Bandit
+
+# Static application security testing (AETHER doctrine §11, §15).
+# Gates on high-severity / medium-confidence findings; the full report runs
+# informationally so lower-severity items stay visible without blocking.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    - cron: "0 7 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  bandit:
+    name: Bandit SAST
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install bandit
+        run: python -m pip install --upgrade "bandit==1.9.4"
+
+      - name: Bandit gate (high severity)
+        run: bandit -r . -x ./test,./docs --severity-level high --confidence-level medium
+
+      - name: Bandit full report (informational)
+        if: always()
+        run: bandit -r . -x ./test,./docs || true

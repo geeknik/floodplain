@@ -1,0 +1,49 @@
+name: Dependency Audit
+
+# Supply-chain integrity gate (AETHER doctrine §6, §15).
+# Fails the build if any pinned dependency has a known vulnerability, and
+# re-runs weekly so newly-disclosed CVEs in already-pinned versions are caught.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - requirements.txt
+      - requirements.lock
+      - test/requirements.txt
+      - .github/workflows/dependency-audit.yml
+  pull_request:
+    branches: [master]
+    paths:
+      - requirements.txt
+      - requirements.lock
+      - test/requirements.txt
+      - .github/workflows/dependency-audit.yml
+  schedule:
+    # Mondays 07:00 UTC — catch CVEs disclosed against pinned versions.
+    - cron: "0 7 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  pip-audit:
+    name: pip-audit (known CVEs)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pip-audit
+        run: python -m pip install --upgrade "pip-audit==2.10.1"
+
+      - name: Audit runtime dependencies (requirements.txt)
+        run: pip-audit --strict --progress-spinner off -r requirements.txt
+
+      - name: Audit locked dependency closure (requirements.lock)
+        run: pip-audit --strict --progress-spinner off -r requirements.lock
