@@ -115,6 +115,16 @@ class sfp_tool_trufflehog(SpiderFootPlugin):
         if not url:
             return
 
+        # Defense-in-depth (AETHER doctrine §2): the repository URL is extracted
+        # from event data by string-splitting, so without validation a crafted
+        # value could begin with '-' and be parsed by trufflehog as a command-line
+        # flag (argument injection). Require a well-formed http(s) URL with no
+        # embedded whitespace before handing it to the subprocess.
+        url = url.strip()
+        if " " in url or not url.lower().startswith(("http://", "https://")):
+            self.debug(f"Refusing to scan malformed repository URL: {url}")
+            return
+
         if url in self.results:
             self.debug(f"Skipping {url} as already scanned.")
             return
@@ -132,6 +142,9 @@ class sfp_tool_trufflehog(SpiderFootPlugin):
         else:
             args.append("--entropy=True")
 
+        # "--" marks end-of-options so the URL is always treated as a positional
+        # argument and never as a flag, even if validation above is ever loosened.
+        args.append("--")
         args.append(url)
         try:
             p = Popen(args, stdout=PIPE, stderr=PIPE)
