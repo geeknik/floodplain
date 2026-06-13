@@ -1769,7 +1769,8 @@ class SpiderFootDb:
         if not isinstance(eventHashes, list):
             raise TypeError(f"eventHashes is {type(eventHashes)}; expected list()")
 
-        uniqueId = str(hashlib.md5(str(time.time() + random.SystemRandom().randint(0, 99999999)).encode('utf-8')).hexdigest())  # noqa: DUO130
+        # MD5 here only generates a non-security unique scan instance ID.
+        uniqueId = str(hashlib.md5(str(time.time() + random.SystemRandom().randint(0, 99999999)).encode('utf-8'), usedforsecurity=False).hexdigest())  # noqa: DUO130
 
         qry = "INSERT INTO tbl_scan_correlation_results \
             (id, scan_instance_id, title, rule_name, rule_descr, rule_risk, rule_id, rule_logic) \
