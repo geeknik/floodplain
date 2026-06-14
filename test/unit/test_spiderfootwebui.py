@@ -785,3 +785,31 @@ class TestSpiderFootWebUi(unittest.TestCase):
         # empty / non-string input falls back to a safe default.
         self.assertIn('filename="export"', build(''))
         self.assertIn('filename="export"', build(None))
+
+    def test_scancorrelationtriage_disabled_returns_not_configured(self):
+        from unittest.mock import patch
+        opts = self.default_options
+        opts['__modules__'] = dict()
+        opts['_llm_enabled'] = False
+        sfwebui = SpiderFootWebUi(self.web_default_options, opts)
+        with patch("sfwebui.CorrelationTriage") as MockTriage:
+            instance = MockTriage.return_value
+            instance.is_enabled.return_value = False
+            result = sfwebui.scancorrelationtriage("scan-x")
+        self.assertIsInstance(result, dict)
+        self.assertFalse(result.get("enabled"))
+
+    def test_scancorrelationtriage_enabled_invokes_orchestrator(self):
+        from unittest.mock import patch
+        opts = self.default_options
+        opts['__modules__'] = dict()
+        opts['_llm_enabled'] = True
+        opts['_llm_api_key'] = "k"
+        sfwebui = SpiderFootWebUi(self.web_default_options, opts)
+        with patch("sfwebui.CorrelationTriage") as MockTriage:
+            instance = MockTriage.return_value
+            instance.is_enabled.return_value = True
+            instance.triage.return_value = {"enabled": True, "triaged": 3, "truncated": False, "model": "m"}
+            result = sfwebui.scancorrelationtriage("scan-x")
+        instance.triage.assert_called_once_with("scan-x")
+        self.assertEqual(result["triaged"], 3)
