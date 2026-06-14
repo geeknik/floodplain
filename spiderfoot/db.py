@@ -105,7 +105,17 @@ class SpiderFootDb:
         "CREATE INDEX idx_scan_results_srchash ON tbl_scan_results (scan_instance_id, source_event_hash)",
         "CREATE INDEX idx_scan_logs ON tbl_scan_log (scan_instance_id)",
         "CREATE INDEX idx_scan_correlation ON tbl_scan_correlation_results (scan_instance_id, id)",
-        "CREATE INDEX idx_scan_correlation_events ON tbl_scan_correlation_results_events (correlation_id)"
+        "CREATE INDEX idx_scan_correlation_events ON tbl_scan_correlation_results_events (correlation_id)",
+        "CREATE TABLE tbl_scan_correlation_llm ( \
+            correlation_id      VARCHAR NOT NULL PRIMARY KEY REFERENCES tbl_scan_correlation_results(id), \
+            priority            VARCHAR NOT NULL, \
+            rank                INT NOT NULL, \
+            explanation         VARCHAR, \
+            grp                 VARCHAR, \
+            model               VARCHAR NOT NULL, \
+            generated           INT NOT NULL \
+        )",
+        "CREATE INDEX idx_scan_correlation_llm ON tbl_scan_correlation_llm (correlation_id)"
     ]
 
     eventDetails = [

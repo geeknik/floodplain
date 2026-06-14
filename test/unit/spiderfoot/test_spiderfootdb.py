@@ -1346,3 +1346,23 @@ class TestSpiderFootDb(unittest.TestCase):
             [],
             "correlation results were orphaned after deleting the scan",
         )
+
+    def test_schema_has_correlation_llm_table_with_valid_fk(self):
+        """The triage table must exist and its FK must reference a real table."""
+        import sqlite3
+
+        conn = sqlite3.connect(":memory:")
+        try:
+            cur = conn.cursor()
+            for query in SpiderFootDb.createSchemaQueries:
+                cur.execute(query)
+            conn.commit()
+
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            tables = {row[0] for row in cur.fetchall()}
+            self.assertIn("tbl_scan_correlation_llm", tables)
+
+            for fk in cur.execute("PRAGMA foreign_key_list('tbl_scan_correlation_llm')").fetchall():
+                self.assertIn(fk[2], tables)
+        finally:
+            conn.close()
