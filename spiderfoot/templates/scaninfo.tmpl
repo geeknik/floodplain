@@ -473,8 +473,13 @@
                 table += "<thead><tr><th>Correlation</th><th>Risk</th><th>AI Triage</th><th>Data Elements</th></tr></thead><tbody>";
                 for (var i = 0; i < data.length; i++) {
                     table += "<tr>";
-                    table += "<td><a style='cursor: pointer' onClick='toggleCorrelation(\"" + instanceId + "\",\"" + data[i][0] + "\")'>" + data[i][1] + "</a>&nbsp;&nbsp;";
-                    table += "<i class='glyphicon glyphicon-question-sign' style='color: #ccc' rel='tooltip' data-title=\"" + data[i][5] + "\"></i>";
+                    // The /scancorrelations endpoint returns these fields raw (unlike
+                    // /scaneventresults, which html.escape()s server-side), and the
+                    // correlation title is built by substituting raw event values, so
+                    // escape here to prevent stored XSS. Do NOT also escape server-side
+                    // or these will double-escape.
+                    table += "<td><a style='cursor: pointer' onClick='toggleCorrelation(\"" + instanceId + "\",\"" + data[i][0] + "\")'>" + sf.escapeHTML(data[i][1]) + "</a>&nbsp;&nbsp;";
+                    table += "<i class='glyphicon glyphicon-question-sign' style='color: #ccc' rel='tooltip' data-title=\"" + sf.escapeHTML(data[i][5]) + "\"></i>";
                     table += "</td>";
                     if (data[i][3] == "HIGH") {
                         statusy = "alert-danger";
@@ -488,7 +493,7 @@
                     if (data[i][3] == "INFO") {
                         statusy = "alert-success";
                     }
-                    table += "<td><span class='badge " + statusy + "'>" + data[i][3] + "</span></td>";
+                    table += "<td><span class='badge " + statusy + "'>" + sf.escapeHTML(data[i][3]) + "</span></td>";
                     // AI triage cell is left empty here and populated separately via
                     // textContent (XSS-safe) from untrusted LLM output.
                     table += "<td id='aitriage_td_" + data[i][0] + "'></td>";
