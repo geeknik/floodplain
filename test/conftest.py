@@ -1,9 +1,16 @@
+import os
+
 import pytest
 from spiderfoot import SpiderFootHelpers
 
 
 @pytest.fixture(autouse=True)
 def default_options(request):
+    # Isolate the test database per pytest-xdist worker. Workers are separate
+    # processes, so SpiderFootDb's threading.RLock does not serialise them;
+    # sharing one file makes them race on schema creation under `-n auto`,
+    # failing intermittently with "table ... already exists" / "no such table".
+    worker_id = os.environ.get("PYTEST_XDIST_WORKER", "master")
     request.cls.default_options = {
         '_debug': False,
         '__logging': True,  # Logging in general
@@ -14,7 +21,7 @@ def default_options(request):
         '_internettlds': 'https://publicsuffix.org/list/effective_tld_names.dat',
         '_internettlds_cache': 72,
         '_genericusers': ",".join(SpiderFootHelpers.usernamesFromWordlists(['generic-usernames'])),
-        '__database': f"{SpiderFootHelpers.dataPath()}/spiderfoot.test.db",  # note: test database file
+        '__database': f"{SpiderFootHelpers.dataPath()}/spiderfoot.test.{worker_id}.db",  # note: per-xdist-worker test database file
         '__modules__': None,  # List of modules. Will be set after start-up.
         '__correlationrules__': None,  # List of correlation rules. Will be set after start-up.
         '_socks1type': '',
