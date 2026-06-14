@@ -15,11 +15,13 @@ import json
 import logging
 import multiprocessing as mp
 import random
+import re
 import string
 import time
 from copy import deepcopy
 from io import BytesIO, StringIO
 from operator import itemgetter
+from urllib.parse import quote
 
 import cherrypy
 from cherrypy import _cperror
@@ -223,6 +225,34 @@ class SpiderFootWebUi:
 
         return ret
 
+    @staticmethod
+    def build_content_disposition(filename: str) -> str:
+        """Build a safe Content-Disposition header value for a file download.
+
+        Download filenames incorporate user-controlled data (e.g. a scan name),
+        so the value is sanitised to prevent HTTP response splitting / header
+        injection (CWE-113) and quoted-string breakout (RFC 6266): control
+        characters, CR/LF, quotes, semicolons and path separators are collapsed
+        out of the legacy ``filename`` token, and an RFC 5987 ``filename*``
+        parameter carries the original name percent-encoded (which is
+        header-safe by construction).
+
+        Args:
+            filename (str): proposed download filename (possibly untrusted)
+
+        Returns:
+            str: a safe ``attachment; filename="..."; filename*=...`` value
+        """
+        name = filename if isinstance(filename, str) else ""
+        # Collapse path separators and any character outside a conservative,
+        # header-safe allowlist to underscores. This neutralises CR/LF, quotes,
+        # semicolons and other control characters in the legacy token.
+        ascii_name = re.sub(r"[^A-Za-z0-9._-]", "_", name.replace("/", "_").replace("\\", "_"))
+        ascii_name = ascii_name.strip("._") or "export"
+        # RFC 5987 percent-encoding can never emit header-special characters.
+        encoded = quote(name, safe="") or "export"
+        return f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{encoded}"
+
     def searchBase(self: 'SpiderFootWebUi', id: str = None, eventType: str = None, value: str = None) -> list:
         """Search.
 
@@ -361,7 +391,7 @@ class SpiderFootWebUi:
                 row[4]
             ])
 
-        cherrypy.response.headers['Content-Disposition'] = f"attachment; filename=SpiderFoot-{id}.log.csv"
+        cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(f"SpiderFoot-{id}.log.csv")
         cherrypy.response.headers['Content-Type'] = "application/csv"
         cherrypy.response.headers['Pragma'] = "no-cache"
         return fileobj.getvalue().encode('utf-8')
@@ -407,7 +437,7 @@ class SpiderFootWebUi:
             else:
                 fname = "SpiderFoot-correlations.xlsx"
 
-            cherrypy.response.headers['Content-Disposition'] = f"attachment; filename={fname}"
+            cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
             cherrypy.response.headers['Content-Type'] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             cherrypy.response.headers['Pragma'] = "no-cache"
             return self.buildExcel(rows, headings, sheetNameIndex=0)
@@ -429,7 +459,7 @@ class SpiderFootWebUi:
             else:
                 fname = "SpiderFoot-correlations.csv"
 
-            cherrypy.response.headers['Content-Disposition'] = f"attachment; filename={fname}"
+            cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
             cherrypy.response.headers['Content-Type'] = "application/csv"
             cherrypy.response.headers['Pragma'] = "no-cache"
             return fileobj.getvalue().encode('utf-8')
@@ -462,7 +492,7 @@ class SpiderFootWebUi:
                 rows.append([lastseen, str(row[4]), str(row[3]), str(row[2]), row[13], datafield])
 
             fname = "SpiderFoot.xlsx"
-            cherrypy.response.headers['Content-Disposition'] = f"attachment; filename={fname}"
+            cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
             cherrypy.response.headers['Content-Type'] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             cherrypy.response.headers['Pragma'] = "no-cache"
             return self.buildExcel(rows, ["Updated", "Type", "Module", "Source",
@@ -480,7 +510,7 @@ class SpiderFootWebUi:
                 parser.writerow([lastseen, str(row[4]), str(row[3]), str(row[2]), row[13], datafield])
 
             fname = "SpiderFoot.csv"
-            cherrypy.response.headers['Content-Disposition'] = f"attachment; filename={fname}"
+            cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
             cherrypy.response.headers['Content-Type'] = "application/csv"
             cherrypy.response.headers['Pragma'] = "no-cache"
             return fileobj.getvalue().encode('utf-8')
@@ -529,7 +559,7 @@ class SpiderFootWebUi:
             else:
                 fname = scan_name + "-SpiderFoot.xlsx"
 
-            cherrypy.response.headers['Content-Disposition'] = f"attachment; filename={fname}"
+            cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
             cherrypy.response.headers['Content-Type'] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             cherrypy.response.headers['Pragma'] = "no-cache"
             return self.buildExcel(rows, ["Scan Name", "Updated", "Type", "Module",
@@ -552,7 +582,7 @@ class SpiderFootWebUi:
             else:
                 fname = scan_name + "-SpiderFoot.csv"
 
-            cherrypy.response.headers['Content-Disposition'] = f"attachment; filename={fname}"
+            cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
             cherrypy.response.headers['Content-Type'] = "application/csv"
             cherrypy.response.headers['Pragma'] = "no-cache"
             return fileobj.getvalue().encode('utf-8')
@@ -656,7 +686,7 @@ class SpiderFootWebUi:
         else:
             fname = scan_name + "-SpiderFoot.json"
 
-        cherrypy.response.headers['Content-Disposition'] = f"attachment; filename={fname}"
+        cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
         cherrypy.response.headers['Content-Type'] = "application/json; charset=utf-8"
         cherrypy.response.headers['Pragma'] = "no-cache"
         return json.dumps(scaninfo).encode('utf-8')
@@ -694,7 +724,7 @@ class SpiderFootWebUi:
         else:
             fname = scan_name + "SpiderFoot.gexf"
 
-        cherrypy.response.headers['Content-Disposition'] = f"attachment; filename={fname}"
+        cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
         cherrypy.response.headers['Content-Type'] = "application/gexf"
         cherrypy.response.headers['Pragma'] = "no-cache"
         return SpiderFootHelpers.buildGraphGexf([root], "SpiderFoot Export", data)
@@ -738,7 +768,7 @@ class SpiderFootWebUi:
         else:
             fname = scan_name + "-SpiderFoot.gexf"
 
-        cherrypy.response.headers['Content-Disposition'] = f"attachment; filename={fname}"
+        cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
         cherrypy.response.headers['Content-Type'] = "application/gexf"
         cherrypy.response.headers['Pragma'] = "no-cache"
         return SpiderFootHelpers.buildGraphGexf(roots, "SpiderFoot Export", data)
