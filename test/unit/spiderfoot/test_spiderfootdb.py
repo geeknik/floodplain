@@ -1395,3 +1395,36 @@ class TestSpiderFootDb(unittest.TestCase):
         finally:
             with contextlib.suppress(Exception):
                 sfdb.scanInstanceDelete(scan_id)
+
+    def test_scanInstanceDelete_removes_llm_triage_rows(self):
+        """Deleting a scan must also remove its LLM triage rows."""
+        import contextlib
+
+        sfdb = SpiderFootDb(self.default_options, False)
+        scan_id = "test-delete-llm-cleanup"
+        with contextlib.suppress(Exception):
+            sfdb.scanInstanceDelete(scan_id)
+        sfdb.scanInstanceCreate(scan_id, "examplescan", "example.com")
+        corr_id = sfdb.correlationResultCreate(
+            scan_id, "rule_id", "Rule Name", "descr", "INFO",
+            "id: rule_id", "title", ["hash1"],
+        )
+        sfdb.correlationLlmCreate(corr_id, "HIGH", 1, "x", None, "test/model", 1700000000)
+        self.assertEqual(len(sfdb.scanCorrelationLlmList(scan_id)), 1)
+
+        sfdb.scanInstanceDelete(scan_id)
+
+        self.assertEqual(sfdb.scanCorrelationLlmList(scan_id), [])
+        # scanCorrelationLlmList joins on tbl_scan_correlation_results, so it
+        # returns [] once the correlation row is gone even if the triage row is
+        # orphaned. Assert directly against the table so an orphaned row fails.
+        with sfdb.dbhLock:
+            sfdb.dbh.execute(
+                "SELECT COUNT(*) FROM tbl_scan_correlation_llm WHERE correlation_id = ?",
+                [corr_id],
+            )
+            self.assertEqual(
+                sfdb.dbh.fetchone()[0],
+                0,
+                "LLM triage row was orphaned after deleting the scan",
+            )

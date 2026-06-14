@@ -1137,10 +1137,13 @@ class SpiderFootDb:
         qry5 = "DELETE FROM tbl_scan_correlation_results_events WHERE correlation_id IN \
             (SELECT id FROM tbl_scan_correlation_results WHERE scan_instance_id = ?)"
         qry6 = "DELETE FROM tbl_scan_correlation_results WHERE scan_instance_id = ?"
+        qry7 = "DELETE FROM tbl_scan_correlation_llm WHERE correlation_id IN \
+            (SELECT id FROM tbl_scan_correlation_results WHERE scan_instance_id = ?)"
         qvars = [instanceId]
 
         with self.dbhLock:
             try:
+                self.dbh.execute(qry7, qvars)
                 self.dbh.execute(qry5, qvars)
                 self.dbh.execute(qry6, qvars)
                 self.dbh.execute(qry1, qvars)
