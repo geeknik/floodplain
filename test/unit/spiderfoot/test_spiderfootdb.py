@@ -1428,3 +1428,44 @@ class TestSpiderFootDb(unittest.TestCase):
                 0,
                 "LLM triage row was orphaned after deleting the scan",
             )
+
+    def test_existing_4_0_db_is_migrated_to_add_llm_table(self):
+        """An existing 4.0 DB (correlation tables present, triage table absent)
+        gains tbl_scan_correlation_llm on the next SpiderFootDb construction."""
+        import os
+        import sqlite3
+        from spiderfoot import SpiderFootHelpers
+
+        db_path = f"{SpiderFootHelpers.dataPath()}/spiderfoot.migrate-test.db"
+        if os.path.exists(db_path):
+            os.remove(db_path)
+
+        try:
+            # Simulate an existing 4.0 DB: every schema query EXCEPT the two
+            # tbl_scan_correlation_llm ones.
+            conn = sqlite3.connect(db_path)
+            cur = conn.cursor()
+            for query in SpiderFootDb.createSchemaQueries:
+                if "tbl_scan_correlation_llm" not in query:
+                    cur.execute(query)
+            conn.commit()
+            conn.close()
+
+            opts = dict(self.default_options)
+            opts["__database"] = db_path
+            sfdb = SpiderFootDb(opts, False)
+
+            with sfdb.dbhLock:
+                sfdb.dbh.execute(
+                    "SELECT name FROM sqlite_master "
+                    "WHERE type='table' AND name='tbl_scan_correlation_llm'"
+                )
+                self.assertIsNotNone(
+                    sfdb.dbh.fetchone(),
+                    "tbl_scan_correlation_llm was not added to the existing 4.0 database",
+                )
+
+            sfdb.close()
+        finally:
+            if os.path.exists(db_path):
+                os.remove(db_path)

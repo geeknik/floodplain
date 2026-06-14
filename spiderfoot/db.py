@@ -384,6 +384,20 @@ class SpiderFootDb:
                                   "SpiderFoot wasn't able to migrate you, so you'll need to delete "
                                   "your SpiderFoot database in order to proceed.") from None
 
+            # Add the LLM triage table for 4.0 databases created before it
+            # existed (the pre-4.0 block above is skipped once correlation
+            # tables are present, so this runs separately).
+            try:
+                self.dbh.execute("SELECT COUNT(*) FROM tbl_scan_correlation_llm")
+            except sqlite3.Error:
+                try:
+                    for query in self.createSchemaQueries:
+                        if "tbl_scan_correlation_llm" in query:
+                            self.dbh.execute(query)
+                    self.conn.commit()
+                except sqlite3.Error:
+                    raise IOError("Failed to add the LLM triage table to the database.") from None
+
             if init:
                 for row in self.eventDetails:
                     event = row[0]
