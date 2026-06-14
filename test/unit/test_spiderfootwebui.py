@@ -813,3 +813,9 @@ class TestSpiderFootWebUi(unittest.TestCase):
             result = sfwebui.scancorrelationtriage("scan-x")
         instance.triage.assert_called_once_with("scan-x")
         self.assertEqual(result["triaged"], 3)
+
+    def test_scancorrelationtriageresults_returns_list(self):
+        opts = self.default_options
+        opts['__modules__'] = dict()
+        sfwebui = SpiderFootWebUi(self.web_default_options, opts)
+        self.assertIsInstance(sfwebui.scancorrelationtriageresults("nonexistent-scan"), list)
