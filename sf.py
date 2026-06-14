@@ -70,6 +70,12 @@ def main() -> None:
         '_socks3port': '',
         '_socks4user': '',
         '_socks5pwd': '',
+        '_llm_enabled': False,  # On-demand LLM correlation triage (default off)
+        '_llm_api_key': '',  # OpenRouter API key (or set FLOODPLAIN_OPENROUTER_API_KEY)
+        '_llm_model': 'openrouter/fusion',  # OpenRouter ensemble (panel + judge)
+        '_llm_timeout': 120,  # Per-request timeout (seconds); Fusion is multi-model
+        '_llm_max_tokens': 4000,  # Response token cap (aligned with max_correlations)
+        '_llm_max_correlations': 50,  # Max correlations sent per triage
     }
 
     sfOptdescs = {
@@ -86,6 +92,12 @@ def main() -> None:
         '_socks3port': 'SOCKS Server TCP Port. Usually 1080 for 4/5, 8080 for HTTP and 9050 for TOR.',
         '_socks4user': 'SOCKS Username. Valid only for SOCKS4 and SOCKS5 servers.',
         '_socks5pwd': "SOCKS Password. Valid only for SOCKS5 servers.",
+        '_llm_enabled': "Enable on-demand AI triage of correlation results (OpenRouter). Off by default; no data is sent unless you trigger triage.",
+        '_llm_api_key': "OpenRouter API key for AI triage. Prefer the FLOODPLAIN_OPENROUTER_API_KEY environment variable so the key is not stored in the database.",
+        '_llm_model': "OpenRouter model slug for AI triage. Default 'openrouter/fusion' is an ensemble (panel of models + judge) for best accuracy, priced as the sum of the underlying completions. Set a single model slug for lower cost.",
+        '_llm_timeout': "Timeout in seconds for each AI triage request (Fusion is multi-model, so it needs longer).",
+        '_llm_max_tokens': "Maximum response tokens for AI triage.",
+        '_llm_max_correlations': "Maximum correlations sent to the LLM per triage; excess are dropped (highest-risk kept).",
         '_modulesenabled': "Modules enabled for the scan."  # This is a hack to get a description for an option not actually available.
     }
 
