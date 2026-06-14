@@ -1366,3 +1366,32 @@ class TestSpiderFootDb(unittest.TestCase):
                 self.assertIn(fk[2], tables)
         finally:
             conn.close()
+
+    def test_correlation_llm_create_and_list_roundtrip(self):
+        """Triage rows can be written and read back for a scan."""
+        import contextlib
+
+        sfdb = SpiderFootDb(self.default_options, False)
+        scan_id = "test-corr-llm-roundtrip"
+        with contextlib.suppress(Exception):
+            sfdb.scanInstanceDelete(scan_id)
+        sfdb.scanInstanceCreate(scan_id, "examplescan", "example.com")
+        corr_id = sfdb.correlationResultCreate(
+            scan_id, "rule_id", "Rule Name", "descr", "INFO",
+            "id: rule_id", "title", ["hash1"],
+        )
+
+        try:
+            sfdb.correlationLlmCreate(corr_id, "HIGH", 1, "Because reasons.", "group-a", "test/model", 1700000000)
+            rows = sfdb.scanCorrelationLlmList(scan_id)
+            self.assertEqual(len(rows), 1)
+            row = rows[0]
+            self.assertEqual(row[0], corr_id)       # correlation_id
+            self.assertEqual(row[1], "HIGH")        # priority
+            self.assertEqual(row[2], 1)             # rank
+            self.assertEqual(row[3], "Because reasons.")  # explanation
+            self.assertEqual(row[4], "group-a")     # grp
+            self.assertEqual(row[5], "test/model")  # model
+        finally:
+            with contextlib.suppress(Exception):
+                sfdb.scanInstanceDelete(scan_id)

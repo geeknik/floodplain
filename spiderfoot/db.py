@@ -1820,3 +1820,74 @@ class SpiderFootDb:
                     raise IOError("Unable to create correlation result in database") from e
 
         return uniqueId
+
+    def correlationLlmCreate(self, correlationId: str, priority: str, rank: int,
+                             explanation: str, grp: str, model: str, generated: int) -> None:
+        """Store (or replace) the LLM triage result for a correlation.
+
+        Args:
+            correlationId (str): correlation result ID
+            priority (str): triage priority (CRITICAL/HIGH/MEDIUM/LOW/INFO)
+            rank (int): overall importance rank (1 = most important)
+            explanation (str): short plain-language explanation
+            grp (str): optional duplicate/related group label
+            model (str): model identifier used
+            generated (int): epoch seconds when generated
+
+        Raises:
+            TypeError: arg type was invalid
+            IOError: database I/O failed
+        """
+        if not isinstance(correlationId, str):
+            raise TypeError(f"correlationId is {type(correlationId)}; expected str()")
+        if not isinstance(priority, str):
+            raise TypeError(f"priority is {type(priority)}; expected str()")
+        if not isinstance(rank, int):
+            raise TypeError(f"rank is {type(rank)}; expected int()")
+        if not isinstance(model, str):
+            raise TypeError(f"model is {type(model)}; expected str()")
+        if not isinstance(generated, int):
+            raise TypeError(f"generated is {type(generated)}; expected int()")
+
+        qry = "INSERT OR REPLACE INTO tbl_scan_correlation_llm \
+            (correlation_id, priority, rank, explanation, grp, model, generated) \
+            VALUES (?, ?, ?, ?, ?, ?, ?)"
+
+        with self.dbhLock:
+            try:
+                self.dbh.execute(qry, (
+                    correlationId, priority, rank, explanation, grp, model, generated
+                ))
+                self.conn.commit()
+            except sqlite3.Error as e:
+                raise IOError("Unable to create LLM triage result in database") from e
+
+    def scanCorrelationLlmList(self, instanceId: str) -> list:
+        """Obtain LLM triage rows for a scan's correlations.
+
+        Args:
+            instanceId (str): scan instance ID
+
+        Returns:
+            list: rows of (correlation_id, priority, rank, explanation, grp, model, generated)
+
+        Raises:
+            TypeError: arg type was invalid
+            IOError: database I/O failed
+        """
+        if not isinstance(instanceId, str):
+            raise TypeError(f"instanceId is {type(instanceId)}; expected str()") from None
+
+        qry = "SELECT l.correlation_id, l.priority, l.rank, l.explanation, l.grp, l.model, l.generated \
+            FROM tbl_scan_correlation_llm l, tbl_scan_correlation_results c \
+            WHERE c.id = l.correlation_id AND c.scan_instance_id = ? \
+            ORDER BY l.rank"
+
+        qvars = [instanceId]
+
+        with self.dbhLock:
+            try:
+                self.dbh.execute(qry, qvars)
+                return self.dbh.fetchall()
+            except sqlite3.Error as e:
+                raise IOError("SQL error encountered when fetching LLM triage list") from e
