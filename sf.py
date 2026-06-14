@@ -70,6 +70,12 @@ def main() -> None:
         '_socks3port': '',
         '_socks4user': '',
         '_socks5pwd': '',
+        '_llm_enabled': False,  # On-demand LLM correlation triage (default off)
+        '_llm_api_key': '',  # OpenRouter API key (or set FLOODPLAIN_OPENROUTER_API_KEY)
+        '_llm_model': 'openrouter/fusion',  # OpenRouter ensemble (panel + judge)
+        '_llm_timeout': 120,  # Per-request timeout (seconds); Fusion is multi-model
+        '_llm_max_tokens': 4000,  # Response token cap (aligned with max_correlations)
+        '_llm_max_correlations': 50,  # Max correlations sent per triage
     }
 
     sfOptdescs = {
@@ -86,6 +92,12 @@ def main() -> None:
         '_socks3port': 'SOCKS Server TCP Port. Usually 1080 for 4/5, 8080 for HTTP and 9050 for TOR.',
         '_socks4user': 'SOCKS Username. Valid only for SOCKS4 and SOCKS5 servers.',
         '_socks5pwd': "SOCKS Password. Valid only for SOCKS5 servers.",
+        '_llm_enabled': "Enable on-demand AI triage of correlation results (OpenRouter). Off by default; no data is sent unless you trigger triage.",
+        '_llm_api_key': "OpenRouter API key for AI triage. Prefer the FLOODPLAIN_OPENROUTER_API_KEY environment variable so the key is not stored in the database.",
+        '_llm_model': "OpenRouter model slug for AI triage. Default 'openrouter/fusion' is an ensemble (panel of models + judge) for best accuracy, priced as the sum of the underlying completions. Set a single model slug for lower cost.",
+        '_llm_timeout': "Timeout in seconds for each AI triage request (Fusion is multi-model, so it needs longer).",
+        '_llm_max_tokens': "Maximum response tokens for AI triage.",
+        '_llm_max_correlations': "Maximum correlations sent to the LLM per triage; excess are dropped (highest-risk kept).",
         '_modulesenabled': "Modules enabled for the scan."  # This is a hack to get a description for an option not actually available.
     }
 
@@ -97,6 +109,7 @@ def main() -> None:
     p.add_argument("-m", metavar="mod1,mod2,...", type=str, help="Modules to enable.")
     p.add_argument("-M", "--modules", action='store_true', help="List available modules.")
     p.add_argument("-C", "--correlate", metavar="scanID", help="Run correlation rules against a scan ID.")
+    p.add_argument("--triage", metavar="scanID", help="Run on-demand AI triage of a scan's correlation results (requires LLM config).")
     p.add_argument("-s", metavar="TARGET", help="Target for the scan.")
     p.add_argument("-t", metavar="type1,type2,...", type=str, help="Event types to collect (modules selected automatically).")
     p.add_argument("-u", choices=["all", "footprint", "investigate", "passive"], type=str, help="Select modules automatically by use case")
@@ -193,6 +206,22 @@ def main() -> None:
             corr.run_correlations()
         except Exception as e:
             log.critical(f"Unable to run correlation rules: {e}", exc_info=True)
+            sys.exit(-1)
+        sys.exit(0)
+
+    if args.triage:
+        from spiderfoot import CorrelationTriage
+        triage = CorrelationTriage(dbh, sfConfig)
+        if not triage.is_enabled():
+            log.error("AI triage is not configured. Set _llm_enabled and an OpenRouter key "
+                      "(config or FLOODPLAIN_OPENROUTER_API_KEY).")
+            sys.exit(-1)
+        try:
+            result = triage.triage(args.triage)
+            log.info(f"AI triage complete: {result['triaged']} correlations triaged "
+                     f"(model {result['model']}, truncated={result['truncated']}).")
+        except Exception as e:
+            log.critical(f"AI triage failed: {e}", exc_info=True)
             sys.exit(-1)
         sys.exit(0)
 

@@ -1,4 +1,5 @@
 ## -*- coding: utf-8 -*-
+<%page args="llm_enabled=False"/>
 <%include file="HEADER.tmpl"/>
 <%
   if status == "FINISHED":
@@ -18,6 +19,10 @@
    <div class="btn-group">
       <a id='btn-status' class="btn btn-default" onClick='scanSummaryView("${id}")'><i class='glyphicon glyphicon-eye-open'></i>&nbsp;Summary</a>
       <a id='btn-correlations' class="btn btn-default" onClick='browseCorrelations("${id}")'><i class='glyphicon glyphicon-exclamation-sign'></i>&nbsp;Correlations</a>
+% if llm_enabled:
+      <a id='btn-ai-triage' class="btn btn-default" data-scan-id="${id}" onClick='triageCorrelations("${id}")'><i class='glyphicon glyphicon-flash'></i>&nbsp;Triage with AI</a>
+      <span id='ai-triage-status' style='margin-left: 8px'></span>
+% endif
       <a id='btn-browse' class="btn btn-default" onClick='browseEventList("${id}")'><i class='glyphicon glyphicon-th-list'></i>&nbsp;Browse</a>
       <a id='btn-graph' class="btn btn-default" onClick='graphEvents("${id}")'><i class='glyphicon glyphicon-asterisk'></i>&nbsp;Graph</a>
       <a id='btn-info' class="btn btn-default" onClick='viewScanConfig("${id}")'><i class='glyphicon glyphicon-cog'></i>&nbsp;Scan Settings</a>
@@ -465,7 +470,7 @@
                     return;
                 }
                 var table = "<table id='scansummary-content' class='table table-bordered table-striped table-condensed tablesorter small'>";
-                table += "<thead><tr><th>Correlation</th><th>Risk</th><th>Data Elements</th></tr></thead><tbody>";
+                table += "<thead><tr><th>Correlation</th><th>Risk</th><th>AI Triage</th><th>Data Elements</th></tr></thead><tbody>";
                 for (var i = 0; i < data.length; i++) {
                     table += "<tr>";
                     table += "<td><a style='cursor: pointer' onClick='toggleCorrelation(\"" + instanceId + "\",\"" + data[i][0] + "\")'>" + data[i][1] + "</a>&nbsp;&nbsp;";
@@ -484,24 +489,116 @@
                         statusy = "alert-success";
                     }
                     table += "<td><span class='badge " + statusy + "'>" + data[i][3] + "</span></td>";
+                    // AI triage cell is left empty here and populated separately via
+                    // textContent (XSS-safe) from untrusted LLM output.
+                    table += "<td id='aitriage_td_" + data[i][0] + "'></td>";
                     table += "<td>" + data[i][7] + "</td>";
-                    table += "</tr><tr class='hidden' id='corrwell_tr_" + data[i][0] + "'><td colspan=3 id='corrwell_td_" + data[i][0] + "'></td></tr>";
+                    table += "</tr><tr class='hidden' id='corrwell_tr_" + data[i][0] + "'><td colspan=4 id='corrwell_td_" + data[i][0] + "'></td></tr>";
                 }
                 table += "</tbody></table>";
                 $("#loader").fadeOut(500);
                 $("#mainbody").append(table);
-                $.tablesorter.addParser({ 
-                    id: 'criticality', 
-                    is: function(s) { 
-                        return false; 
-                    }, 
-                    format: function(s) { 
-                        return s.toLowerCase().replace(/high/,3).replace(/medium/,2).replace(/low/,1).replace(/info/,0); 
-                    }, 
-                    type: 'numeric' 
+                $.tablesorter.addParser({
+                    id: 'criticality',
+                    is: function(s) {
+                        return false;
+                    },
+                    format: function(s) {
+                        return s.toLowerCase().replace(/high/,3).replace(/medium/,2).replace(/low/,1).replace(/info/,0);
+                    },
+                    type: 'numeric'
                 });
                 $("#scansummary-content").tablesorter({ headers: { 1: { sorter: 'criticality' } } });
                 sf.updateTooltips();
+                renderTriageBadges(instanceId);
+            });
+        }
+
+        // Fixed allowlist mapping LLM-provided priority strings to Bootstrap badge
+        // classes. Anything not in this map (including unexpected/hostile LLM
+        // output) falls back to the neutral grey "default" class. The class is
+        // never interpolated from the raw LLM string.
+        function aiTriageBadgeClass(priority) {
+            switch (priority) {
+                case "CRITICAL":
+                case "HIGH":
+                    return "badge alert-danger";
+                case "MEDIUM":
+                    return "badge alert-warning";
+                case "LOW":
+                    return "badge alert-info";
+                case "INFO":
+                    return "badge";
+                default:
+                    return "badge";
+            }
+        }
+
+        // Fetch stored LLM triage rows (read-only; no LLM call) and render a
+        // coloured priority badge + explanation into each correlation row.
+        // All LLM-derived strings are inserted via jQuery .text() (textContent),
+        // never .html()/innerHTML, to prevent stored XSS from untrusted output.
+        function renderTriageBadges(instanceId) {
+            sf.fetchData('${docroot}/scancorrelationtriageresults', {'id': instanceId}, function(rows) {
+                if (!rows || rows.length == 0) {
+                    return;
+                }
+                for (var i = 0; i < rows.length; i++) {
+                    // row layout: [correlation_id, priority, rank, explanation, grp, model, generated]
+                    var corrId = rows[i][0];
+                    var priority = String(rows[i][1]);
+                    var explanation = rows[i][3];
+                    // Look up the placeholder cell by id; correlation ids come from
+                    // the server-side scancorrelations response, so this selector is
+                    // not constructed from LLM output.
+                    var cell = document.getElementById("aitriage_td_" + corrId);
+                    if (!cell) {
+                        continue;
+                    }
+                    var badge = document.createElement("span");
+                    // Class chosen from the fixed allowlist above (never raw LLM string).
+                    badge.className = aiTriageBadgeClass(priority.toUpperCase());
+                    // textContent: untrusted priority rendered as inert text.
+                    badge.textContent = priority;
+                    $(cell).empty();
+                    cell.appendChild(badge);
+                    if (explanation) {
+                        var expl = document.createElement("div");
+                        expl.className = "small text-muted";
+                        // textContent: untrusted explanation rendered as inert text.
+                        expl.textContent = String(explanation);
+                        cell.appendChild(expl);
+                    }
+                }
+            });
+        }
+
+        // Trigger on-demand AI triage of this scan's correlations, then reload
+        // the correlations view so the persisted badges appear.
+        function triageCorrelations(instanceId) {
+            var status = document.getElementById("ai-triage-status");
+            if (status) {
+                status.textContent = " Triaging…";
+            }
+            $.ajax({
+                type: "POST",
+                url: '${docroot}/scancorrelationtriage?id=' + encodeURIComponent(instanceId),
+                cache: false,
+                dataType: "json"
+            }).done(function(d) {
+                if (!status) {
+                    return;
+                }
+                if (d && d.error) {
+                    status.textContent = " " + d.error;
+                    return;
+                }
+                status.textContent = " Triaged " + (d ? d.triaged : 0) + " findings.";
+                browseCorrelations(instanceId);
+            }).fail(function() {
+                if (status) {
+                    status.textContent = " Triage request failed.";
+                }
             });
         }
 

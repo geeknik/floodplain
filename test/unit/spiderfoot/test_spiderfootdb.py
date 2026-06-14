@@ -1346,3 +1346,126 @@ class TestSpiderFootDb(unittest.TestCase):
             [],
             "correlation results were orphaned after deleting the scan",
         )
+
+    def test_schema_has_correlation_llm_table_with_valid_fk(self):
+        """The triage table must exist and its FK must reference a real table."""
+        import sqlite3
+
+        conn = sqlite3.connect(":memory:")
+        try:
+            cur = conn.cursor()
+            for query in SpiderFootDb.createSchemaQueries:
+                cur.execute(query)
+            conn.commit()
+
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            tables = {row[0] for row in cur.fetchall()}
+            self.assertIn("tbl_scan_correlation_llm", tables)
+
+            for fk in cur.execute("PRAGMA foreign_key_list('tbl_scan_correlation_llm')").fetchall():
+                self.assertIn(fk[2], tables)
+        finally:
+            conn.close()
+
+    def test_correlation_llm_create_and_list_roundtrip(self):
+        """Triage rows can be written and read back for a scan."""
+        import contextlib
+
+        sfdb = SpiderFootDb(self.default_options, False)
+        scan_id = "test-corr-llm-roundtrip"
+        with contextlib.suppress(Exception):
+            sfdb.scanInstanceDelete(scan_id)
+        sfdb.scanInstanceCreate(scan_id, "examplescan", "example.com")
+        corr_id = sfdb.correlationResultCreate(
+            scan_id, "rule_id", "Rule Name", "descr", "INFO",
+            "id: rule_id", "title", ["hash1"],
+        )
+
+        try:
+            sfdb.correlationLlmCreate(corr_id, "HIGH", 1, "Because reasons.", "group-a", "test/model", 1700000000)
+            rows = sfdb.scanCorrelationLlmList(scan_id)
+            self.assertEqual(len(rows), 1)
+            row = rows[0]
+            self.assertEqual(row[0], corr_id)       # correlation_id
+            self.assertEqual(row[1], "HIGH")        # priority
+            self.assertEqual(row[2], 1)             # rank
+            self.assertEqual(row[3], "Because reasons.")  # explanation
+            self.assertEqual(row[4], "group-a")     # grp
+            self.assertEqual(row[5], "test/model")  # model
+        finally:
+            with contextlib.suppress(Exception):
+                sfdb.scanInstanceDelete(scan_id)
+
+    def test_scanInstanceDelete_removes_llm_triage_rows(self):
+        """Deleting a scan must also remove its LLM triage rows."""
+        import contextlib
+
+        sfdb = SpiderFootDb(self.default_options, False)
+        scan_id = "test-delete-llm-cleanup"
+        with contextlib.suppress(Exception):
+            sfdb.scanInstanceDelete(scan_id)
+        sfdb.scanInstanceCreate(scan_id, "examplescan", "example.com")
+        corr_id = sfdb.correlationResultCreate(
+            scan_id, "rule_id", "Rule Name", "descr", "INFO",
+            "id: rule_id", "title", ["hash1"],
+        )
+        sfdb.correlationLlmCreate(corr_id, "HIGH", 1, "x", None, "test/model", 1700000000)
+        self.assertEqual(len(sfdb.scanCorrelationLlmList(scan_id)), 1)
+
+        sfdb.scanInstanceDelete(scan_id)
+
+        self.assertEqual(sfdb.scanCorrelationLlmList(scan_id), [])
+        # scanCorrelationLlmList joins on tbl_scan_correlation_results, so it
+        # returns [] once the correlation row is gone even if the triage row is
+        # orphaned. Assert directly against the table so an orphaned row fails.
+        with sfdb.dbhLock:
+            sfdb.dbh.execute(
+                "SELECT COUNT(*) FROM tbl_scan_correlation_llm WHERE correlation_id = ?",
+                [corr_id],
+            )
+            self.assertEqual(
+                sfdb.dbh.fetchone()[0],
+                0,
+                "LLM triage row was orphaned after deleting the scan",
+            )
+
+    def test_existing_4_0_db_is_migrated_to_add_llm_table(self):
+        """An existing 4.0 DB (correlation tables present, triage table absent)
+        gains tbl_scan_correlation_llm on the next SpiderFootDb construction."""
+        import os
+        import sqlite3
+        from spiderfoot import SpiderFootHelpers
+
+        db_path = f"{SpiderFootHelpers.dataPath()}/spiderfoot.migrate-test.db"
+        if os.path.exists(db_path):
+            os.remove(db_path)
+
+        try:
+            # Simulate an existing 4.0 DB: every schema query EXCEPT the two
+            # tbl_scan_correlation_llm ones.
+            conn = sqlite3.connect(db_path)
+            cur = conn.cursor()
+            for query in SpiderFootDb.createSchemaQueries:
+                if "tbl_scan_correlation_llm" not in query:
+                    cur.execute(query)
+            conn.commit()
+            conn.close()
+
+            opts = dict(self.default_options)
+            opts["__database"] = db_path
+            sfdb = SpiderFootDb(opts, False)
+
+            with sfdb.dbhLock:
+                sfdb.dbh.execute(
+                    "SELECT name FROM sqlite_master "
+                    "WHERE type='table' AND name='tbl_scan_correlation_llm'"
+                )
+                self.assertIsNotNone(
+                    sfdb.dbh.fetchone(),
+                    "tbl_scan_correlation_llm was not added to the existing 4.0 database",
+                )
+
+            sfdb.close()
+        finally:
+            if os.path.exists(db_path):
+                os.remove(db_path)
