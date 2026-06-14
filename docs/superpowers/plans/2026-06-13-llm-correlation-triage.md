@@ -391,6 +391,25 @@ class TestOpenRouterClient(unittest.TestCase):
             with self.assertRaises(LLMError):
                 self._client().chat("sys", "usr")
 
+    def test_chat_extracts_json_from_markdown_fence(self):
+        # Models like openrouter/fusion may wrap JSON in a ```json fence.
+        content = "```json\n{\"results\": [{\"index\": 0}]}\n```"
+        resp = MagicMock()
+        resp.status_code = 200
+        resp.json.return_value = {"choices": [{"message": {"content": content}}]}
+        with patch("spiderfoot.llm.requests.post", return_value=resp):
+            out = self._client().chat("sys", "usr")
+        self.assertEqual(out, {"results": [{"index": 0}]})
+
+    def test_chat_extracts_json_object_from_surrounding_prose(self):
+        content = "Here is the analysis:\n{\"results\": []}\nLet me know if you need more."
+        resp = MagicMock()
+        resp.status_code = 200
+        resp.json.return_value = {"choices": [{"message": {"content": content}}]}
+        with patch("spiderfoot.llm.requests.post", return_value=resp):
+            out = self._client().chat("sys", "usr")
+        self.assertEqual(out, {"results": []})
+
     def test_chat_error_does_not_leak_api_key(self):
         resp = MagicMock()
         resp.status_code = 401
@@ -421,6 +440,7 @@ Create `spiderfoot/llm.py`:
 # -------------------------------------------------------------------------------
 import json
 import logging
+import re
 import time
 from urllib.parse import urlparse
 
@@ -432,6 +452,40 @@ _ALLOWED_HOST = "openrouter.ai"
 
 class LLMError(Exception):
     """Raised when an LLM request fails or returns an unusable response."""
+
+
+def _extract_json_object(content: str) -> dict:
+    """Parse a JSON object from model content, tolerating fences/prose.
+
+    Some models (notably openrouter/fusion) do not honor response_format and may
+    wrap the JSON in a ```json fence or surrounding prose. Try a direct parse,
+    then a fenced parse, then the outermost {...} slice.
+
+    Raises:
+        ValueError: no JSON object could be parsed.
+    """
+    if not isinstance(content, str):
+        raise ValueError("content is not a string")
+
+    candidates = [content.strip()]
+
+    fence = re.search(r"```(?:json)?\s*(.+?)\s*```", content, re.DOTALL)
+    if fence:
+        candidates.append(fence.group(1).strip())
+
+    start, end = content.find("{"), content.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        candidates.append(content[start:end + 1])
+
+    for candidate in candidates:
+        try:
+            parsed = json.loads(candidate)
+        except ValueError:
+            continue
+        if isinstance(parsed, dict):
+            return parsed
+
+    raise ValueError("no JSON object found in content")
 
 
 class OpenRouterClient:
@@ -516,7 +570,7 @@ class OpenRouterClient:
             try:
                 data = resp.json()
                 content = data["choices"][0]["message"]["content"]
-                parsed = json.loads(content)
+                parsed = _extract_json_object(content)
             except (ValueError, KeyError, IndexError, TypeError) as e:
                 raise LLMError(f"LLM response was not usable JSON ({type(e).__name__})") from None
 
@@ -532,7 +586,7 @@ class OpenRouterClient:
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `.venv/bin/python -m pytest test/unit/spiderfoot/test_llm.py -W ignore`
-Expected: PASS (5 tests).
+Expected: PASS (7 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -979,7 +1033,7 @@ Add to `CorrelationTriage` (and add `import json` to the module's imports at the
         correlations = self.dbh.scanCorrelationList(scan_id)
         id_by_index = {i: correlations[i][0] for i in range(len(correlations))}
 
-        cap = int(self.config.get("_llm_max_correlations", 200))
+        cap = int(self.config.get("_llm_max_correlations", 50))
         truncated = False
         total = len(payload)
         if total > cap:
@@ -993,8 +1047,8 @@ Add to `CorrelationTriage` (and add `import json` to the module's imports at the
         client = OpenRouterClient(
             api_key=self._resolve_api_key(),
             model=model,
-            timeout=int(self.config.get("_llm_timeout", 30)),
-            max_tokens=int(self.config.get("_llm_max_tokens", 2000)),
+            timeout=int(self.config.get("_llm_timeout", 120)),
+            max_tokens=int(self.config.get("_llm_max_tokens", 4000)),
         )
         raw = client.chat(SYSTEM_PROMPT, json.dumps(payload))
         results = self.validate_results(raw, id_by_index)
@@ -1094,17 +1148,21 @@ to:
         '_socks5pwd': '',
         '_llm_enabled': False,  # On-demand LLM correlation triage (default off)
         '_llm_api_key': '',  # OpenRouter API key (or set FLOODPLAIN_OPENROUTER_API_KEY)
-        '_llm_model': 'anthropic/claude-haiku-4.5',  # OpenRouter model slug
-        '_llm_timeout': 30,  # Per-request timeout (seconds)
-        '_llm_max_tokens': 2000,  # Response token cap
-        '_llm_max_correlations': 200,  # Max correlations sent per triage
+        '_llm_model': 'openrouter/fusion',  # OpenRouter ensemble (panel + judge)
+        '_llm_timeout': 120,  # Per-request timeout (seconds); Fusion is multi-model
+        '_llm_max_tokens': 4000,  # Response token cap (aligned with max_correlations)
+        '_llm_max_correlations': 50,  # Max correlations sent per triage
     }
 ```
 
-> Verify `anthropic/claude-haiku-4.5` (or pick the current cheapest capable
-> instruct model) against OpenRouter's live model list before merging; the slug
-> must exist. If unsure, use a widely-available economical default and note it
-> in the settings description.
+> `openrouter/fusion` is an ensemble — a panel of models deliberate, then a
+> judge synthesizes a consensus — chosen for the most accurate correlation
+> inference. It is priced as the **sum of the underlying completions**, so it is
+> more expensive and slower than a single model (hence the 120s timeout); this is
+> acceptable because triage is on-demand, default-off, BYO-key, and capped.
+> Operators can set `_llm_model` to any single OpenRouter model for lower cost or
+> to avoid Fusion's built-in web search. `_llm_max_tokens` (4000) is kept in step
+> with `_llm_max_correlations` (50) so the JSON response is never truncated.
 
 - [ ] **Step 2: Add option descriptions**
 
@@ -1113,8 +1171,8 @@ In `sf.py`, after `'_socks5pwd': "..."` in `sfOptdescs`, add:
 ```python
         '_llm_enabled': "Enable on-demand AI triage of correlation results (OpenRouter). Off by default; no data is sent unless you trigger triage.",
         '_llm_api_key': "OpenRouter API key for AI triage. Prefer the FLOODPLAIN_OPENROUTER_API_KEY environment variable so the key is not stored in the database.",
-        '_llm_model': "OpenRouter model slug to use for AI triage (e.g. anthropic/claude-haiku-4.5).",
-        '_llm_timeout': "Timeout in seconds for each AI triage request.",
+        '_llm_model': "OpenRouter model slug for AI triage. Default 'openrouter/fusion' is an ensemble (panel of models + judge) for best accuracy, priced as the sum of the underlying completions. Set a single model slug for lower cost.",
+        '_llm_timeout': "Timeout in seconds for each AI triage request (Fusion is multi-model, so it needs longer).",
         '_llm_max_tokens': "Maximum response tokens for AI triage.",
         '_llm_max_correlations': "Maximum correlations sent to the LLM per triage; excess are dropped (highest-risk kept).",
 ```

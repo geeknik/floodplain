@@ -56,11 +56,10 @@ class OpenRouterClient:
                  timeout: int = 30, max_tokens: int = 2000,
                  max_retries: int = 2): ...
 
-    def chat(self, system: str, user: str, schema: dict) -> dict:
-        """POST one chat completion; require a JSON object response;
-        validate it against `schema`; return the parsed dict.
-        Raises LLMError on any failure (network, non-2xx, timeout,
-        non-JSON, schema mismatch)."""
+    def chat(self, system: str, user: str) -> dict:
+        """POST one chat completion and return the parsed JSON object from the
+        message content. Raises LLMError on any failure (network, non-2xx,
+        timeout, or content that cannot be parsed as a JSON object)."""
 ```
 
 - **Auth:** `Authorization: Bearer <api_key>` header. The key is never logged
@@ -70,8 +69,13 @@ class OpenRouterClient:
   host; a non-OpenRouter host is rejected.
 - **Bounds:** request body size cap; `timeout`; `max_tokens`; `max_retries`
   with backoff on transient (5xx/timeout) errors only.
-- **Response:** request a JSON-object response (`response_format`); parse and
-  validate against `schema` before returning. No streaming.
+- **Response:** request a JSON-object response (`response_format`), but parse
+  **tolerantly** — some models (notably `openrouter/fusion`) may not honor
+  `response_format` and can wrap JSON in markdown fences or prose. The client
+  strips ```` ```json ```` fences and, failing that, extracts the outermost
+  `{...}` object before `json.loads`. Structural/schema validation of the parsed
+  object happens in the orchestrator (§8), keeping the client generic and free of
+  a JSON-schema dependency. No streaming.
 - **Errors:** one typed `LLMError`; messages are generic and contain no secrets.
 
 This is the only unit that performs network egress, so it is the single point
@@ -171,10 +175,19 @@ UI like other `_`-prefixed options):
 |-----|---------|---------|
 | `_llm_enabled` | `False` | Master on/off. Off ⇒ feature disabled, button hidden, zero egress. |
 | `_llm_api_key` | `""` | OpenRouter API key. May be overridden by env var `FLOODPLAIN_OPENROUTER_API_KEY` (preferred; not persisted). |
-| `_llm_model` | a low-cost instruct model (a Haiku-class / GPT-mini-class OpenRouter slug, verified against OpenRouter's current catalog at implementation time) | Model slug; user-overridable to any OpenRouter model. |
-| `_llm_timeout` | `30` | Per-request timeout (seconds). |
-| `_llm_max_tokens` | `2000` | Response token cap. |
-| `_llm_max_correlations` | `200` | Max correlations sent per triage; excess ⇒ top-N by risk + `truncated`. |
+| `_llm_model` | `openrouter/fusion` | Model slug; user-overridable to any OpenRouter model. **Fusion** is an ensemble — a panel of models deliberate, then a judge synthesizes a consensus — for the most accurate correlation inference. See the Fusion note below. |
+| `_llm_timeout` | `120` | Per-request timeout (seconds). Fusion runs multiple models + a judge (+ web search), so it needs a higher timeout than a single model. |
+| `_llm_max_tokens` | `4000` | Response token cap. Must comfortably fit a JSON result per correlation (~40-80 tokens each), hence aligned with `_llm_max_correlations`. |
+| `_llm_max_correlations` | `50` | Max correlations sent per triage; excess ⇒ top-N by risk + `truncated`. Kept in step with `_llm_max_tokens` so the response is never truncated mid-JSON. |
+
+**Fusion note (cost & egress).** `openrouter/fusion` is priced as the **sum of
+the underlying completions** (panel + judge), so it is materially more expensive
+than a single model — acceptable here because triage is on-demand, default-off,
+BYO-key, and capped. Fusion has **web search/fetch enabled**, so its panel may
+search the web using the *metadata we send* (rule names, event-type names) —
+never targets or event values (the §5 contract still holds). Operators who want
+zero third-party web activity or lower cost can set `_llm_model` to any single
+OpenRouter model instead.
 
 **Enabled** ≡ `_llm_enabled` is true **and** a non-empty key is resolvable
 (env or config). Otherwise the feature is treated as not configured.
