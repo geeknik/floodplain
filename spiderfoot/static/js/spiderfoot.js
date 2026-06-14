@@ -81,6 +81,22 @@ sf.remove_sfurltag = function (data) {
   return data;
 };
 
+// HTML-escape an untrusted value before interpolating it into a markup string.
+// Use this for any server/scan-derived text (e.g. correlation titles, which the
+// engine builds by substituting raw event values) that is inserted via string
+// concatenation + .html()/.append(), to prevent stored XSS.
+sf.escapeHTML = function (data) {
+  if (data === null || data === undefined) {
+    return "";
+  }
+  return String(data)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+};
+
 sf.search = function (scan_id, value, type, postFunc) {
   sf.fetchData(
     docroot + "/search",
