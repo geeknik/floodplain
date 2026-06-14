@@ -63,3 +63,37 @@ class TestCorrelationTriagePayload(unittest.TestCase):
         self.assertEqual(payload[0]["risk"], "HIGH")
         self.assertEqual(payload[0]["event_count"], 3)
         self.assertEqual(payload[0]["event_types"], ["EMAILADDR"])
+
+
+class TestCorrelationTriageValidate(unittest.TestCase):
+
+    def setUp(self):
+        self.t = CorrelationTriage(dbh=object(), config={})
+        # index -> correlation id
+        self.id_by_index = {0: "corr-0", 1: "corr-1"}
+
+    def test_valid_response_maps_to_ids_and_coerces(self):
+        raw = {"results": [
+            {"index": 0, "priority": "high", "rank": 2, "explanation": "a", "group": "g"},
+            {"index": 1, "priority": "BOGUS", "rank": 1, "explanation": "b"},
+        ]}
+        out = self.t.validate_results(raw, self.id_by_index)
+        out_by_id = {r["correlation_id"]: r for r in out}
+        self.assertEqual(out_by_id["corr-0"]["priority"], "HIGH")   # upper-cased
+        self.assertEqual(out_by_id["corr-1"]["priority"], "INFO")   # invalid -> INFO
+        self.assertEqual(out_by_id["corr-0"]["grp"], "g")
+        self.assertIsNone(out_by_id["corr-1"]["grp"])
+
+    def test_unknown_index_is_dropped(self):
+        raw = {"results": [{"index": 99, "priority": "LOW", "rank": 1, "explanation": "x"}]}
+        self.assertEqual(self.t.validate_results(raw, self.id_by_index), [])
+
+    def test_explanation_is_length_bounded(self):
+        raw = {"results": [{"index": 0, "priority": "LOW", "rank": 1, "explanation": "y" * 5000}]}
+        out = self.t.validate_results(raw, self.id_by_index)
+        self.assertLessEqual(len(out[0]["explanation"]), 500)
+
+    def test_malformed_response_raises(self):
+        from spiderfoot.llm import LLMError
+        with self.assertRaises(LLMError):
+            self.t.validate_results({"not_results": []}, self.id_by_index)

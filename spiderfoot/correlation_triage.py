@@ -7,6 +7,8 @@
 import logging
 import os
 
+from spiderfoot.llm import LLMError
+
 PRIORITIES = ("CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO")
 _MAX_EXPLANATION = 500
 _ENV_KEY = "FLOODPLAIN_OPENROUTER_API_KEY"
@@ -86,3 +88,51 @@ class CorrelationTriage:
                 "event_types": event_types,
             })
         return payload
+
+    def validate_results(self, raw: dict, id_by_index: dict) -> list:
+        """Validate an LLM response and map it back to correlation ids.
+
+        Args:
+            raw (dict): parsed LLM response (untrusted)
+            id_by_index (dict): payload index -> correlation id
+
+        Returns:
+            list: validated dicts {correlation_id, priority, rank, explanation, grp}
+
+        Raises:
+            LLMError: response shape was unusable
+        """
+        if not isinstance(raw, dict) or not isinstance(raw.get("results"), list):
+            raise LLMError("LLM response missing 'results' array")
+
+        validated = []
+        for item in raw["results"]:
+            if not isinstance(item, dict):
+                continue
+            index = item.get("index")
+            if index not in id_by_index:
+                continue
+
+            priority = str(item.get("priority", "INFO")).upper()
+            if priority not in PRIORITIES:
+                priority = "INFO"
+
+            try:
+                rank = int(item.get("rank", 0))
+            except (TypeError, ValueError):
+                rank = 0
+
+            explanation = item.get("explanation")
+            explanation = str(explanation)[:_MAX_EXPLANATION] if explanation is not None else None
+
+            grp = item.get("group")
+            grp = str(grp) if grp else None
+
+            validated.append({
+                "correlation_id": id_by_index[index],
+                "priority": priority,
+                "rank": rank,
+                "explanation": explanation,
+                "grp": grp,
+            })
+        return validated
