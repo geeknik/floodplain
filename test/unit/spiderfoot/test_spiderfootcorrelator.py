@@ -172,3 +172,52 @@ class TestSpiderFootCorrelator(unittest.TestCase):
             "collections": []
         }
         self.assertFalse(correlator.check_rule_validity(rule))
+
+    def test_build_correlation_title_missing_field_does_not_crash_or_use_stale_value(self):
+        """A headline referencing a field that is absent from the matched data
+        must not raise (undefined 'v' -> NameError) nor substitute a stale
+        value from a previously-resolved field."""
+        sfdb = SpiderFootDb(self.default_options, False)
+        correlator = SpiderFootCorrelator(sfdb, {})
+
+        # The missing field comes first, so the buggy code path hit `v` before
+        # it was ever assigned (NameError).
+        rule = {"headline": "{missingfield} relates to {data}"}
+        data = [{"data": "example.com", "type": "INTERNET_NAME"}]
+
+        title = correlator.build_correlation_title(rule, data)
+
+        self.assertIsInstance(title, str)
+        # The available field is still substituted.
+        self.assertIn("example.com", title)
+        # The unavailable field is left as a literal placeholder rather than
+        # crashing or being filled with another field's value.
+        self.assertIn("{missingfield}", title)
+
+    def test_init_does_not_crash_on_non_string_meta_value(self):
+        """Loading a rule whose meta contains a non-string value must not raise
+        (the meta-normalisation step previously referenced a non-existent
+        top-level rule key for any non-string meta value)."""
+        sfdb = SpiderFootDb(self.default_options, False)
+
+        rule_yaml = (
+            "id: testrule\n"
+            "version: 1\n"
+            "meta:\n"
+            "  name: Test\n"
+            "  description: Test description\n"
+            "  risk: INFO\n"
+            "  references:\n"
+            "    - https://example.com\n"
+            "collections:\n"
+            "  - collect:\n"
+            "      - field: type\n"
+            "        method: exact\n"
+            "        value: INTERNET_NAME\n"
+            "headline: Test headline\n"
+        )
+
+        correlator = SpiderFootCorrelator(sfdb, {"testrule": rule_yaml})
+        self.assertEqual(len(correlator.get_ruleset()), 1)
+        # The non-string meta value is preserved untouched.
+        self.assertEqual(correlator.get_ruleset()[0]["meta"]["references"], ["https://example.com"])
