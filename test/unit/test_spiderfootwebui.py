@@ -645,3 +645,33 @@ class TestSpiderFootWebUi(unittest.TestCase):
         self.assertIsInstance(scan_element_type_discovery, dict)
         scan_element_type_discovery = sfwebui.scanelementtypediscovery('', '')
         self.assertIsInstance(scan_element_type_discovery, dict)
+
+    def test_scancorrelationsexport_xlsx_uses_correct_file_extension(self):
+        """Excel correlation export must yield a .xlsx file, not a misspelled .xlxs.
+
+        Regression test for the '.xlxs' typo in the correlation export's
+        Content-Disposition filename.
+        """
+        import contextlib
+
+        import cherrypy
+        from spiderfoot import SpiderFootDb
+
+        opts = self.default_options
+        opts['__modules__'] = dict()
+
+        scan_id = "test-correlations-xlsx-extension"
+        sfdb = SpiderFootDb(opts, False)
+        with contextlib.suppress(Exception):
+            sfdb.scanInstanceDelete(scan_id)
+        sfdb.scanInstanceCreate(scan_id, "examplescan", "example.com")
+
+        sfwebui = SpiderFootWebUi(self.web_default_options, opts)
+        try:
+            result = sfwebui.scancorrelationsexport(scan_id, "xlsx")
+            self.assertIsInstance(result, bytes)
+            disposition = cherrypy.response.headers['Content-Disposition']
+            self.assertIn(".xlsx", disposition)
+            self.assertNotIn(".xlxs", disposition)
+        finally:
+            sfdb.scanInstanceDelete(scan_id)

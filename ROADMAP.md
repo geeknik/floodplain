@@ -6,6 +6,17 @@
 
 ---
 
+## 0. Decisions locked (2026-06-13)
+
+- **Versioning — advance the version.** We forked at `SpiderFoot 4.0.0`; treat Floodplain as a new project and **reset to `0.0.1`**, developing toward a **Floodplain `1.0.0`** stable release. Doctrine (SemVer): while pre-1.0 we are in active development as `0.MINOR.PATCH` — bump **MINOR** for new modules/features and breaking changes, **PATCH** for fixes; `1.0.0` marks the first API/UX-stable Floodplain. Advance these in lockstep when applied: `VERSION`, `spiderfoot/__version__.py`, and the README "Stable Release" badge. *(Queued — not yet applied.)*
+- **Python floor stays 3.10+.** Matrix `3.10–3.13` unchanged. Only fix the stale "Python 3.7+" line in README FEATURES. *(Revisit a 3.12+ floor later if a dependency forces it.)*
+- **Drop Codecov; self-host coverage.** Remove the README badge + the `codecov-action` upload step in `tests.yaml`; surface coverage from `pytest-cov` directly (CI job summary / self-generated artifact, no third-party). *(Queued.)*
+- **First work track: bug squashing** (in progress).
+
+> **Lint gate is pinned to Python 3.11 on purpose.** The `tests.yaml` lint job runs flake8 on **3.11**. Under Python 3.12+ the bundled `pycodestyle` raises spurious `E231`/`E702` on PEP 701 f-strings (verified empirically). The codebase is clean on 3.11; bumping the lint job to 3.12+ requires upgrading `flake8`/`pycodestyle` first. Ties into the Python-floor decision above.
+
+---
+
 ## 1. Where the fork stands today
 
 Floodplain is a healthy SpiderFoot 4.0 fork. The bones are good; the surface is stale.
