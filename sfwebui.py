@@ -397,7 +397,7 @@ class SpiderFootWebUi:
             rows = []
             for row in correlations:
                 correlation = row[1]
-                rule_name = row[2]
+                rule_name = row[4]
                 rule_risk = row[3]
                 rule_description = row[5]
                 rows.append([rule_name, correlation, rule_risk, rule_description])
@@ -419,7 +419,7 @@ class SpiderFootWebUi:
 
             for row in correlations:
                 correlation = row[1]
-                rule_name = row[2]
+                rule_name = row[4]
                 rule_risk = row[3]
                 rule_description = row[5]
                 parser.writerow([rule_name, correlation, rule_risk, rule_description])
