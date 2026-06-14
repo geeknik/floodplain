@@ -720,3 +720,68 @@ class TestSpiderFootWebUi(unittest.TestCase):
         finally:
             with contextlib.suppress(Exception):
                 sfdb.scanInstanceDelete(scan_id)
+
+    def test_scancorrelationsexport_malicious_scan_name_cannot_inject_headers(self):
+        """A scan name containing CR/LF must not be able to inject headers into
+        the Content-Disposition response header (CWE-113 / HTTP response
+        splitting). The scan name is user-controlled at scan creation time."""
+        import contextlib
+
+        import cherrypy
+        from spiderfoot import SpiderFootDb
+
+        opts = self.default_options
+        opts['__modules__'] = dict()
+
+        scan_id = "test-correlations-header-injection"
+        malicious_name = 'pwn\r\nSet-Cookie: injected=1\r\nX-Evil: "yes'
+        sfdb = SpiderFootDb(opts, False)
+        with contextlib.suppress(Exception):
+            sfdb.scanInstanceDelete(scan_id)
+        sfdb.scanInstanceCreate(scan_id, malicious_name, "example.com")
+
+        sfwebui = SpiderFootWebUi(self.web_default_options, opts)
+        try:
+            sfwebui.scancorrelationsexport(scan_id, "csv")
+            disposition = cherrypy.response.headers['Content-Disposition']
+            # No CR/LF -> cannot start a new header line (response splitting).
+            self.assertNotIn("\r", disposition)
+            self.assertNotIn("\n", disposition)
+            # Single, properly-quoted filename token: the only double quotes are
+            # the wrapping pair, so a quote in the name cannot break out and
+            # inject extra parameters/headers.
+            self.assertTrue(disposition.startswith("attachment"))
+            self.assertEqual(disposition.count('"'), 2)
+        finally:
+            with contextlib.suppress(Exception):
+                sfdb.scanInstanceDelete(scan_id)
+
+    def test_build_content_disposition_neutralises_untrusted_filenames(self):
+        """build_content_disposition() must neutralise CR/LF, quote breakout and
+        path separators in untrusted download filenames (RFC 6266 / CWE-113)."""
+        build = SpiderFootWebUi.build_content_disposition
+
+        # CR/LF header-splitting payload: no raw newlines survive.
+        out = build('a\r\nSet-Cookie: x=1.csv')
+        self.assertNotIn("\r", out)
+        self.assertNotIn("\n", out)
+        self.assertTrue(out.startswith("attachment;"))
+
+        # quote-breakout payload: only the wrapping quote pair remains.
+        out = build('a"; attachment; filename="b.csv')
+        self.assertEqual(out.count('"'), 2)
+        self.assertNotIn("\r", out)
+        self.assertNotIn("\n", out)
+
+        # path separators do not survive in the legacy filename token.
+        out = build('../../etc/passwd')
+        legacy_token = out.split("filename*=")[0]
+        self.assertNotIn("/", legacy_token)
+        self.assertNotIn("\\", legacy_token)
+
+        # a clean name is preserved verbatim in the legacy token.
+        self.assertIn('filename="MyScan-SpiderFoot.csv"', build('MyScan-SpiderFoot.csv'))
+
+        # empty / non-string input falls back to a safe default.
+        self.assertIn('filename="export"', build(''))
+        self.assertIn('filename="export"', build(None))
