@@ -97,3 +97,61 @@ class TestCorrelationTriageValidate(unittest.TestCase):
         from spiderfoot.llm import LLMError
         with self.assertRaises(LLMError):
             self.t.validate_results({"not_results": []}, self.id_by_index)
+
+
+class TestCorrelationTriageRun(unittest.TestCase):
+
+    def _dbh(self, correlations):
+        dbh = MagicMock()
+        dbh.scanCorrelationList.return_value = correlations
+        dbh.scanResultEvent.return_value = [["id", "v", "m", "mod", "IP_ADDRESS", 1]]
+        return dbh
+
+    def _correlations(self, n):
+        return [(f"corr-{i}", f"title {i}", "rid", "LOW", "Rule", "Desc", "yaml", 1) for i in range(n)]
+
+    def test_disabled_does_not_call_client_or_db_writes(self):
+        dbh = self._dbh(self._correlations(1))
+        t = CorrelationTriage(dbh=dbh, config={"_llm_enabled": False, "_llm_api_key": "k"})
+        with patch("spiderfoot.correlation_triage.OpenRouterClient") as MockClient:
+            result = t.triage("scan-x")
+        MockClient.assert_not_called()
+        dbh.correlationLlmCreate.assert_not_called()
+        self.assertFalse(result["enabled"])
+
+    def test_happy_path_persists_rows(self):
+        dbh = self._dbh(self._correlations(2))
+        cfg = {"_llm_enabled": True, "_llm_api_key": "k", "_llm_model": "test/model"}
+        t = CorrelationTriage(dbh=dbh, config=cfg)
+        fake = MagicMock()
+        fake.chat.return_value = {"results": [
+            {"index": 0, "priority": "HIGH", "rank": 1, "explanation": "a"},
+            {"index": 1, "priority": "LOW", "rank": 2, "explanation": "b"},
+        ]}
+        with patch("spiderfoot.correlation_triage.OpenRouterClient", return_value=fake):
+            result = t.triage("scan-x")
+        self.assertEqual(result["triaged"], 2)
+        self.assertEqual(dbh.correlationLlmCreate.call_count, 2)
+
+    def test_invalid_output_writes_nothing(self):
+        from spiderfoot.llm import LLMError
+        dbh = self._dbh(self._correlations(1))
+        cfg = {"_llm_enabled": True, "_llm_api_key": "k", "_llm_model": "test/model"}
+        t = CorrelationTriage(dbh=dbh, config=cfg)
+        fake = MagicMock()
+        fake.chat.return_value = {"garbage": True}
+        with patch("spiderfoot.correlation_triage.OpenRouterClient", return_value=fake):
+            with self.assertRaises(LLMError):
+                t.triage("scan-x")
+        dbh.correlationLlmCreate.assert_not_called()
+
+    def test_truncates_when_over_cap(self):
+        dbh = self._dbh(self._correlations(5))
+        cfg = {"_llm_enabled": True, "_llm_api_key": "k", "_llm_model": "test/model",
+               "_llm_max_correlations": 2}
+        t = CorrelationTriage(dbh=dbh, config=cfg)
+        fake = MagicMock()
+        fake.chat.return_value = {"results": [{"index": 0, "priority": "LOW", "rank": 1, "explanation": "a"}]}
+        with patch("spiderfoot.correlation_triage.OpenRouterClient", return_value=fake):
+            result = t.triage("scan-x")
+        self.assertTrue(result["truncated"])

@@ -4,10 +4,12 @@
 #               The deterministic correlation engine is not involved here.
 # Licence:      MIT
 # -------------------------------------------------------------------------------
+import json
 import logging
 import os
+import time
 
-from spiderfoot.llm import LLMError
+from spiderfoot.llm import OpenRouterClient, LLMError
 
 PRIORITIES = ("CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO")
 _MAX_EXPLANATION = 500
@@ -136,3 +138,61 @@ class CorrelationTriage:
                 "grp": grp,
             })
         return validated
+
+    def triage(self, scan_id: str, now: int = None) -> dict:
+        """Run on-demand LLM triage for a scan's correlations.
+
+        Args:
+            scan_id (str): scan instance ID
+            now (int): epoch seconds to stamp results (defaults to time.time()).
+
+        Returns:
+            dict: {enabled, triaged, truncated, model}
+
+        Raises:
+            LLMError: the LLM call or its response was unusable (nothing stored).
+        """
+        if not self.is_enabled():
+            self.log.info("LLM triage requested but feature is not configured.")
+            return {"enabled": False, "triaged": 0, "truncated": False, "model": None}
+
+        generated = int(now if now is not None else time.time())
+        model = str(self.config.get("_llm_model") or "")
+        if not model:
+            raise LLMError("No LLM model configured")
+
+        payload = self.build_payload(scan_id)
+
+        # Map every payload index to its correlation id once (single query, taken
+        # before any truncation/sort so the index->id mapping stays correct).
+        correlations = self.dbh.scanCorrelationList(scan_id)
+        id_by_index = {i: correlations[i][0] for i in range(len(correlations))}
+
+        cap = int(self.config.get("_llm_max_correlations", 50))
+        truncated = False
+        total = len(payload)
+        if total > cap:
+            # Highest-risk first so the cap keeps the most important findings.
+            order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "INFO": 4}
+            payload.sort(key=lambda p: order.get(str(p.get("risk", "INFO")).upper(), 5))
+            payload = payload[:cap]
+            truncated = True
+            self.log.info(f"LLM triage truncated to top {cap} correlations of {total}.")
+
+        client = OpenRouterClient(
+            api_key=self._resolve_api_key(),
+            model=model,
+            timeout=int(self.config.get("_llm_timeout", 120)),
+            max_tokens=int(self.config.get("_llm_max_tokens", 4000)),
+        )
+        raw = client.chat(SYSTEM_PROMPT, json.dumps(payload))
+        results = self.validate_results(raw, id_by_index)
+
+        for r in results:
+            self.dbh.correlationLlmCreate(
+                r["correlation_id"], r["priority"], r["rank"],
+                r["explanation"], r["grp"], model, generated,
+            )
+
+        self.log.info(f"LLM triage stored {len(results)} results for scan {scan_id}.")
+        return {"enabled": True, "triaged": len(results), "truncated": truncated, "model": model}
