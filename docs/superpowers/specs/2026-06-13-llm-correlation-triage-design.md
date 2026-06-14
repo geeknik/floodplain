@@ -67,8 +67,11 @@ class OpenRouterClient:
 - **Transport:** `requests` (already pinned), HTTPS with default certificate
   verification. `base_url` host is validated against the expected OpenRouter
   host; a non-OpenRouter host is rejected.
-- **Bounds:** request body size cap; `timeout`; `max_tokens`; `max_retries`
-  with backoff on transient (5xx/timeout) errors only.
+- **Bounds:** `timeout`; `max_tokens`; `max_retries` with backoff on transient
+  (5xx/timeout) errors only. The outbound request body is bounded by the
+  orchestrator's `_llm_max_correlations` cap (top-N metadata only), so no
+  separate byte-size cap is enforced in the client; the payload is
+  operator-controlled, not attacker-controlled.
 - **Response:** request a JSON-object response (`response_format`), but parse
   **tolerantly** — some models (notably `openrouter/fusion`) may not honor
   `response_format` and can wrap JSON in markdown fences or prose. The client
