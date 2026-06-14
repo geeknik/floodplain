@@ -155,3 +155,8 @@ class TestCorrelationTriageRun(unittest.TestCase):
         with patch("spiderfoot.correlation_triage.OpenRouterClient", return_value=fake):
             result = t.triage("scan-x")
         self.assertTrue(result["truncated"])
+
+
+class TestPackageExports(unittest.TestCase):
+    def test_classes_importable_from_package(self):
+        from spiderfoot import CorrelationTriage, OpenRouterClient, LLMError  # noqa: F401
