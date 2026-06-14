@@ -675,3 +675,48 @@ class TestSpiderFootWebUi(unittest.TestCase):
             self.assertNotIn(".xlxs", disposition)
         finally:
             sfdb.scanInstanceDelete(scan_id)
+
+    def test_scancorrelationsexport_csv_rule_name_column_holds_rule_name(self):
+        """The 'Rule Name' column of the correlation export must contain the
+        human-readable rule name (rule_name), not the machine rule id.
+
+        Regression: scancorrelationsexport read row[2] (rule_id) for the
+        'Rule Name' column; scanCorrelationList returns rule_name at row[4]."""
+        import contextlib
+        import csv as csvmod
+        import io
+
+        from spiderfoot import SpiderFootDb
+
+        opts = self.default_options
+        opts['__modules__'] = dict()
+
+        scan_id = "test-correlations-rule-name-column"
+        sfdb = SpiderFootDb(opts, False)
+        with contextlib.suppress(Exception):
+            sfdb.scanInstanceDelete(scan_id)
+        sfdb.scanInstanceCreate(scan_id, "examplescan", "example.com")
+        sfdb.correlationResultCreate(
+            scan_id,
+            "rule_machine_id",       # ruleId
+            "Human Readable Rule",   # ruleName
+            "rule description",      # ruleDescr
+            "INFO",                  # ruleRisk
+            "id: rule_machine_id",   # ruleYaml
+            "Correlation headline",  # correlationTitle
+            ["deadbeefcafef00d"],    # eventHashes
+        )
+
+        sfwebui = SpiderFootWebUi(self.web_default_options, opts)
+        try:
+            result = sfwebui.scancorrelationsexport(scan_id, "csv")
+            self.assertIsInstance(result, bytes)
+            rows = list(csvmod.reader(io.StringIO(result.decode("utf-8"))))
+            self.assertEqual(rows[0], ["Rule Name", "Correlation", "Risk", "Description"])
+            self.assertGreaterEqual(len(rows), 2)
+            for data_row in rows[1:]:
+                self.assertEqual(data_row[0], "Human Readable Rule")
+                self.assertEqual(data_row[1], "Correlation headline")
+        finally:
+            with contextlib.suppress(Exception):
+                sfdb.scanInstanceDelete(scan_id)

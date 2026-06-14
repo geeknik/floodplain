@@ -1120,10 +1120,19 @@ class SpiderFootDb:
         qry2 = "DELETE FROM tbl_scan_config WHERE scan_instance_id = ?"
         qry3 = "DELETE FROM tbl_scan_results WHERE scan_instance_id = ?"
         qry4 = "DELETE FROM tbl_scan_log WHERE scan_instance_id = ?"
+        # Correlation results are keyed by scan_instance_id; the event mappings
+        # reference the correlation id, so delete the mappings (via sub-query)
+        # before the correlation rows they point at. Without these, deleting a
+        # scan orphaned its correlation data in the database.
+        qry5 = "DELETE FROM tbl_scan_correlation_results_events WHERE correlation_id IN \
+            (SELECT id FROM tbl_scan_correlation_results WHERE scan_instance_id = ?)"
+        qry6 = "DELETE FROM tbl_scan_correlation_results WHERE scan_instance_id = ?"
         qvars = [instanceId]
 
         with self.dbhLock:
             try:
+                self.dbh.execute(qry5, qvars)
+                self.dbh.execute(qry6, qvars)
                 self.dbh.execute(qry1, qvars)
                 self.dbh.execute(qry2, qvars)
                 self.dbh.execute(qry3, qvars)

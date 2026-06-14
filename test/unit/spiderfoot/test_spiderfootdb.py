@@ -1316,3 +1316,33 @@ class TestSpiderFootDb(unittest.TestCase):
             )
         finally:
             conn.close()
+
+    def test_scanInstanceDelete_removes_correlation_results(self):
+        """Deleting a scan must also remove its correlation results and the
+        correlation->event mappings, rather than orphaning them in the database.
+        """
+        import contextlib
+
+        sfdb = SpiderFootDb(self.default_options, False)
+        scan_id = "test-delete-correlations-cleanup"
+
+        with contextlib.suppress(Exception):
+            sfdb.scanInstanceDelete(scan_id)
+
+        sfdb.scanInstanceCreate(scan_id, "examplescan", "example.com")
+        sfdb.correlationResultCreate(
+            scan_id, "rule_id", "Rule Name", "descr", "INFO",
+            "id: rule_id", "title", ["hash1", "hash2"],
+        )
+        self.assertTrue(
+            len(sfdb.scanCorrelationList(scan_id)) >= 1,
+            "correlation should exist before the scan is deleted",
+        )
+
+        sfdb.scanInstanceDelete(scan_id)
+
+        self.assertEqual(
+            sfdb.scanCorrelationList(scan_id),
+            [],
+            "correlation results were orphaned after deleting the scan",
+        )
