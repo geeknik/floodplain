@@ -123,12 +123,20 @@ For each correlation, **only** these fields are sent to OpenRouter:
 - `rule_name` (e.g. "Open S3 bucket")
 - `rule_description`
 - `risk` (the engine's rule risk level)
-- `headline` / correlation `title`
 - matched-event **count**
 - event **type names** only (e.g. `EMAILADDR`, `IP_ADDRESS`) — a tally; never values
 
 **Never sent:** event data/values, the scan target, the scan name, raw YAML
-rule logic, hostnames, IPs, emails, credentials, or any fetched content.
+rule logic, **the correlation headline/title**, hostnames, IPs, emails,
+credentials, or any fetched content.
+
+> The correlation **title/headline is deliberately excluded**. `build_correlation_title`
+> substitutes raw event *values* into the headline (e.g. "2 names resolve to
+> 1.2.3.4"), so sending it would leak findings. The LLM triages from the generic
+> rule name/description + risk + counts + type tallies — never instance-specific
+> values. (This corrected an earlier draft of this contract that listed the
+> headline as sent; the egress-contract test embeds a sentinel in the title and
+> asserts it does not appear in the payload.)
 
 A dedicated unit test asserts the serialized payload contains none of the
 forbidden data (constructed from fixtures that embed sentinel secret/PII

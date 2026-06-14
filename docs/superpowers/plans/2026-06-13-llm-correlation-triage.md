@@ -776,9 +776,10 @@ Add to `CorrelationTriage` in `spiderfoot/correlation_triage.py`:
         """Build the metadata-only triage payload for a scan's correlations.
 
         Returns a list of dicts, one per correlation, in scanCorrelationList
-        order, each carrying ONLY: index, rule name/description, risk, headline,
-        event count, and event-type names. No raw event values, no scan name,
-        no target.
+        order, each carrying ONLY: index, rule name/description, risk, event
+        count, and event-type names. The correlation headline/title is
+        deliberately excluded — it is built by substituting raw event values,
+        so it could leak findings. No raw event values, no scan name, no target.
         """
         correlations = self.dbh.scanCorrelationList(scan_id)
         payload = []
@@ -791,7 +792,6 @@ Add to `CorrelationTriage` in `spiderfoot/correlation_triage.py`:
                 "rule_name": row[4],
                 "rule_description": row[5],
                 "risk": row[3],
-                "headline": row[1],
                 "event_count": row[7],
                 "event_types": event_types,
             })
