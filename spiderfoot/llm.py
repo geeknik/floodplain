@@ -77,7 +77,11 @@ class OpenRouterClient:
         if not isinstance(model, str) or not model:
             raise ValueError("model must be a non-empty string")
 
-        host = (urlparse(base_url).hostname or "").lower()
+        parsed = urlparse(base_url)
+        if parsed.scheme != "https":
+            raise ValueError("base_url must use https")
+
+        host = (parsed.hostname or "").lower()
         if host != _ALLOWED_HOST and not host.endswith("." + _ALLOWED_HOST):
             raise ValueError("base_url host is not an OpenRouter endpoint")
 
