@@ -58,7 +58,7 @@ class CorrelationTriage:
         """
         return bool(self.config.get("_llm_enabled")) and bool(self._resolve_api_key())
 
-    def build_payload(self, scan_id: str) -> list:
+    def build_payload(self, scan_id: str, correlations: list = None) -> list:
         """Build the metadata-only triage payload for a scan's correlations.
 
         Returns a list of dicts, one per correlation, in scanCorrelationList
@@ -71,11 +71,15 @@ class CorrelationTriage:
 
         Args:
             scan_id (str): scan instance ID
+            correlations (list): pre-fetched scanCorrelationList() rows; if None,
+                they are fetched here. Callers that also need the rows can pass
+                them to avoid a second query.
 
         Returns:
             list: metadata-only dicts (one per correlation) safe for egress
         """
-        correlations = self.dbh.scanCorrelationList(scan_id)
+        if correlations is None:
+            correlations = self.dbh.scanCorrelationList(scan_id)
         payload = []
         for index, row in enumerate(correlations):
             corr_id = row[0]
@@ -161,12 +165,11 @@ class CorrelationTriage:
         if not model:
             raise LLMError("No LLM model configured")
 
-        payload = self.build_payload(scan_id)
-
-        # Map every payload index to its correlation id once (single query, taken
-        # before any truncation/sort so the index->id mapping stays correct).
+        # Fetch the correlations once and reuse for both the payload and the
+        # index->id map (built before any truncation/sort so it stays correct).
         correlations = self.dbh.scanCorrelationList(scan_id)
         id_by_index = {i: correlations[i][0] for i in range(len(correlations))}
+        payload = self.build_payload(scan_id, correlations=correlations)
 
         cap = int(self.config.get("_llm_max_correlations", 50))
         truncated = False

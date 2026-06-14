@@ -133,6 +133,18 @@ class TestCorrelationTriageRun(unittest.TestCase):
         self.assertEqual(result["triaged"], 2)
         self.assertEqual(dbh.correlationLlmCreate.call_count, 2)
 
+    def test_triage_queries_correlation_list_once(self):
+        """triage() must fetch scanCorrelationList only once (reused for both the
+        payload and the index->id map), not once per helper."""
+        dbh = self._dbh(self._correlations(3))
+        cfg = {"_llm_enabled": True, "_llm_api_key": "k", "_llm_model": "test/model"}
+        t = CorrelationTriage(dbh=dbh, config=cfg)
+        fake = MagicMock()
+        fake.chat.return_value = {"results": []}
+        with patch("spiderfoot.correlation_triage.OpenRouterClient", return_value=fake):
+            t.triage("scan-x")
+        self.assertEqual(dbh.scanCorrelationList.call_count, 1)
+
     def test_invalid_output_writes_nothing(self):
         from spiderfoot.llm import LLMError
         dbh = self._dbh(self._correlations(1))
