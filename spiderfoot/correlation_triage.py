@@ -53,3 +53,36 @@ class CorrelationTriage:
             bool: True only when the feature flag is set and a key is resolvable.
         """
         return bool(self.config.get("_llm_enabled")) and bool(self._resolve_api_key())
+
+    def build_payload(self, scan_id: str) -> list:
+        """Build the metadata-only triage payload for a scan's correlations.
+
+        Returns a list of dicts, one per correlation, in scanCorrelationList
+        order, each carrying ONLY: index, rule name/description, risk, event
+        count, and event-type names. No raw event values, no scan name, no
+        target. The correlation title (``row[1]``) is deliberately excluded: it
+        is generated from matched event data and routinely embeds raw values
+        (e.g. a leaked email or host), so egressing it would breach the
+        metadata-only contract.
+
+        Args:
+            scan_id (str): scan instance ID
+
+        Returns:
+            list: metadata-only dicts (one per correlation) safe for egress
+        """
+        correlations = self.dbh.scanCorrelationList(scan_id)
+        payload = []
+        for index, row in enumerate(correlations):
+            corr_id = row[0]
+            events = self.dbh.scanResultEvent(scan_id, correlationId=corr_id)
+            event_types = sorted({e[4] for e in events})
+            payload.append({
+                "index": index,
+                "rule_name": row[4],
+                "rule_description": row[5],
+                "risk": row[3],
+                "event_count": row[7],
+                "event_types": event_types,
+            })
+        return payload
