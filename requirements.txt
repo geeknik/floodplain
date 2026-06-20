@@ -24,7 +24,7 @@ ipwhois==1.1.0
 ipaddr==2.2.0
 phonenumbers==8.13.55
 pygexf==0.2.2
-pypdf==6.13.2
+pypdf==6.13.3
 python-whois==0.7.3
 secure==0.3.0
 pyOpenSSL==26.3.0
