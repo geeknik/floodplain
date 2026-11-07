@@ -89,6 +89,16 @@ To install and run Floodplain, you need at least Python 3.10 and a number of Pyt
  python3 ./sf.py -l 127.0.0.1:5001
 ```
 
+#### Data directory
+
+Floodplain keeps its database (`floodplain.db`), web UI credentials (`passwd`), optional TLS key/certificate (`floodplain.key` / `floodplain.crt`), cache and logs in one data directory, created with owner-only permissions:
+
+1. `FLOODPLAIN_DATA` if set (must be an absolute path); the legacy `SPIDERFOOT_DATA` is still honoured.
+2. Otherwise `~/.floodplain`.
+3. Existing installs: if only `~/.spiderfoot` exists it is used in place, and files keep their old names (`spiderfoot.db`, `spiderfoot.key`, `spiderfoot.crt`), so scan history, settings and API keys carry over. To adopt the new location, stop Floodplain and `mv ~/.spiderfoot ~/.floodplain`.
+
+Cache and logs default to `cache/` and `logs/` inside the data directory and can be moved with `FLOODPLAIN_CACHE` / `FLOODPLAIN_LOGS` (legacy `SPIDERFOOT_CACHE` / `SPIDERFOOT_LOGS` also work). Floodplain refuses to start if a database or `passwd` file sits in the current directory.
+
 ### WRITING CORRELATION RULES
 
 There exists a comprehensive write-up and reference of the correlation rule-set (inherited from SpiderFoot 4.0) [here](/correlations/README.md).

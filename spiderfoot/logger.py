@@ -91,7 +91,7 @@ def logListenerSetup(loggingQueue, opts: dict = None) -> 'logging.handlers.Queue
     # Log debug messages to file
     log_dir = SpiderFootHelpers.logPath()
     debug_handler = logging.handlers.TimedRotatingFileHandler(
-        f"{log_dir}/spiderfoot.debug.log",
+        f"{log_dir}/floodplain.debug.log",
         when="d",
         interval=1,
         backupCount=30
@@ -99,7 +99,7 @@ def logListenerSetup(loggingQueue, opts: dict = None) -> 'logging.handlers.Queue
 
     # Log error messages to file
     error_handler = logging.handlers.TimedRotatingFileHandler(
-        f"{log_dir}/spiderfoot.error.log",
+        f"{log_dir}/floodplain.error.log",
         when="d",
         interval=1,
         backupCount=30

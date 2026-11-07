@@ -53,9 +53,9 @@ FROM alpine:3.13.0
 WORKDIR /home/floodplain
 
 # Place database and logs outside installation directory
-ENV SPIDERFOOT_DATA /var/lib/floodplain
-ENV SPIDERFOOT_LOGS /var/lib/floodplain/log
-ENV SPIDERFOOT_CACHE /var/lib/floodplain/cache
+ENV FLOODPLAIN_DATA /var/lib/floodplain
+ENV FLOODPLAIN_LOGS /var/lib/floodplain/log
+ENV FLOODPLAIN_CACHE /var/lib/floodplain/cache
 
 # Run everything as one command so that only one layer is created
 RUN apk --update --no-cache add python3 musl openssl libxslt tinyxml libxml2 jpeg zlib openjpeg \
@@ -65,12 +65,12 @@ RUN apk --update --no-cache add python3 musl openssl libxslt tinyxml libxml2 jpe
     && rm -rf /var/cache/apk/* \
     && rm -rf /lib/apk/db \
     && rm -rf /root/.cache \
-    && mkdir -p $SPIDERFOOT_DATA || true \
-    && mkdir -p $SPIDERFOOT_LOGS || true \
-    && mkdir -p $SPIDERFOOT_CACHE || true \
-    && chown floodplain:floodplain $SPIDERFOOT_DATA \
-    && chown floodplain:floodplain $SPIDERFOOT_LOGS \
-    && chown floodplain:floodplain $SPIDERFOOT_CACHE
+    && mkdir -p $FLOODPLAIN_DATA || true \
+    && mkdir -p $FLOODPLAIN_LOGS || true \
+    && mkdir -p $FLOODPLAIN_CACHE || true \
+    && chown floodplain:floodplain $FLOODPLAIN_DATA \
+    && chown floodplain:floodplain $FLOODPLAIN_LOGS \
+    && chown floodplain:floodplain $FLOODPLAIN_CACHE
 
 COPY . .
 COPY --from=build /opt/venv /opt/venv

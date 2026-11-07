@@ -58,7 +58,8 @@ The slice that actually makes the product "Floodplain" to a user:
 ### Tier 0 (do alongside Tier 1) — External-reference audit (Category G) — ~0.25 day
 Classify the 209 `spiderfoot.net` + 4 github + 2 User-Agent refs into **(a)** documentation links → repoint to Floodplain docs once they exist (until then, leave or point to the GitHub repo), **(b)** external-service refs in `apiKeyInstructions` → leave untouched, **(c)** `User-Agent: SpiderFoot` → decide deliberately (OPSEC/fingerprint surface, doctrine §10). This audit prevents Tier 1's prose edits from breaking working links.
 
-### Tier 2 — Data path with backward compatibility (real code) — ~0.5 day
+### Tier 2 — Data path with backward compatibility (real code) — DONE 2026-11-07
+- **Status:** shipped. `FLOODPLAIN_DATA/_CACHE/_LOGS` (legacy `SPIDERFOOT_*` honoured, relative paths rejected), `~/.floodplain` with in-place `~/.spiderfoot` fallback, 0700 dir creation, `floodplain.db/.key/.crt` with legacy-name fallback, `floodplain.*.log`, `~/.floodplain_history`. Tests: `test/unit/spiderfoot/test_spiderfoothelpers_paths.py`, `test/unit/test_sfcli_history.py`.
 - Add `FLOODPLAIN_DATA/_CACHE/_LOGS` env vars; keep `SPIDERFOOT_*` as fallback.
 - Resolve data dir as: explicit env → `~/.floodplain` if it exists → `~/.spiderfoot` if *it* exists (use in place, log a one-time notice) → else create `~/.floodplain`. This preserves existing users' scan history (no schema change needed — Category E).
 - Update the legacy-file guards in `sf.py:617-632` accordingly.

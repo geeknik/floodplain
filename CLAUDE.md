@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Floodplain is a fork of **SpiderFoot 4.0** — an OSINT (open source intelligence) automation tool. It runs 200+ pluggable collection modules in a publisher/subscriber pipeline against a target (domain, IP, email, phone, username, bitcoin address, etc.), stores findings in SQLite, and applies a YAML-driven correlation engine. It exposes both a CherryPy web UI and a CLI.
 
-The rebrand from "SpiderFoot" to "Floodplain" is **only partially done**: `VERSION` reads `Floodplain 4.0.0` and `sf.py` prints the Floodplain name, but the Python package is still `spiderfoot/`, modules still use the `sfp_` prefix, entrypoints are still `sf*.py`, the data directory is still `~/.spiderfoot/`, and ~5000 `spiderfoot` string references remain across the tree. Do not assume a name is wrong just because it says "spiderfoot" — that is the current expected state. See `ROADMAP.md` for the planned migration order.
+The rebrand from "SpiderFoot" to "Floodplain" is **only partially done**: `VERSION` reads `Floodplain 4.0.0` and `sf.py` prints the Floodplain name, but the Python package is still `spiderfoot/`, modules still use the `sfp_` prefix, entrypoints are still `sf*.py`, and ~5000 `spiderfoot` string references remain across the tree. Do not assume a name is wrong just because it says "spiderfoot" — that is the current expected state. See `ROADMAP.md` for the planned migration order.
 
 ## Commands
 
@@ -66,11 +66,11 @@ pip-audit --strict -r requirements.lock        # full locked closure (hash-pinne
 ### The `spiderfoot/` package (core engine)
 - `plugin.py` — `SpiderFootPlugin`, the base class every module extends. Defines the event model: `watchedEvents()`, `producedEvents()`, `handleEvent()`, `notifyListeners()`, `registerListener()`, `checkForStop()`, and `threadWorker()`. Modules communicate **only** via events; a module never calls another module directly.
 - `event.py` — `SpiderFootEvent`: the unit of data passed between modules (`eventType`, `data`, `module`, `sourceEvent`). Events form a parent chain back to the synthetic `ROOT` event; `notifyListeners` walks this chain to suppress duplicate cascades (`storeOnly`).
-- `db.py` — `SpiderFootDb`: all SQLite access (scan instances, events, config, correlations). The DB lives at `~/.spiderfoot/spiderfoot.db` (NOT in the app dir — `sf.py` hard-errors if a legacy `spiderfoot.db`/`passwd` is found in the working directory).
+- `db.py` — `SpiderFootDb`: all SQLite access (scan instances, events, config, correlations). The DB lives at `<dataPath>/floodplain.db` (or a pre-existing `spiderfoot.db`; NOT in the app dir — `sf.py` hard-errors if `floodplain.db`/`spiderfoot.db`/`passwd` is found in the working directory).
 - `correlation.py` — `SpiderFootCorrelator`: parses and executes the YAML rules in `correlations/`.
 - `target.py` — `SpiderFootTarget`: target value + type + aliases.
 - `threadpool.py` — `SpiderFootThreadPool` for intra-module concurrency.
-- `helpers.py` — `SpiderFootHelpers`: module/rule loading (`loadModulesAsDict`, `loadCorrelationRulesRaw`), `dataPath()` (`~/.spiderfoot`), target-type detection, scan ID generation, wordlists.
+- `helpers.py` — `SpiderFootHelpers`: module/rule loading (`loadModulesAsDict`, `loadCorrelationRulesRaw`), `dataPath()` / `cachePath()` / `logPath()` / `dataFile()` (precedence: `FLOODPLAIN_DATA` > legacy `SPIDERFOOT_DATA` > `~/.floodplain` > existing legacy `~/.spiderfoot`; env paths must be absolute; dirs created 0700; legacy file names like `spiderfoot.db` are kept when present), target-type detection, scan ID generation, wordlists.
 - `logger.py` — multiprocessing-safe logging via a shared queue (`logListenerSetup`/`logWorkerSetup`); modules log through `self.debug/info/error`, which inject the `scanId`.
 
 ### Modules (`modules/`, ~209 files, `sfp_*.py`)

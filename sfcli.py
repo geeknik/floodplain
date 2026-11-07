@@ -1350,6 +1350,25 @@ class SpiderFootCli(cmd.Cmd):
         return True
 
 
+def cliHistoryFile(home: str) -> str:
+    """Pick the CLI history file in a home directory.
+
+    Uses ``.floodplain_history`` unless only a legacy
+    ``.spiderfoot_history`` exists, so existing history is kept.
+
+    Args:
+        home (str): home directory
+
+    Returns:
+        str: history file path
+    """
+    current = os.path.join(home, ".floodplain_history")
+    legacy = os.path.join(home, ".spiderfoot_history")
+    if not os.path.exists(current) and os.path.exists(legacy):
+        return legacy
+    return current
+
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description='Floodplain: Open Source Intelligence Automation.')
     p.add_argument("-d", "--debug", help="Enable debug output.", action='store_true')
@@ -1358,7 +1377,7 @@ if __name__ == "__main__":
     p.add_argument("-p", metavar="PASS", type=str, help="Password to authenticate to Floodplain server. Consider using -P PASSFILE instead so that your password isn't visible in your shell history or in process lists!")
     p.add_argument("-P", metavar="PASSFILE", type=str, help="File containing password to authenticate to Floodplain server. Ensure permissions on the file are set appropriately!")
     p.add_argument("-e", metavar="FILE", type=str, help="Execute commands from FILE.")
-    p.add_argument("-l", metavar="FILE", type=str, help="Log command history to FILE. By default, history is stored to ~/.spiderfoot_history unless disabled with -n.")
+    p.add_argument("-l", metavar="FILE", type=str, help="Log command history to FILE. By default, history is stored to ~/.floodplain_history (or an existing ~/.spiderfoot_history) unless disabled with -n.")
     p.add_argument("-n", action='store_true', help="Disable history logging.")
     p.add_argument("-o", metavar="FILE", type=str, help="Spool commands and output to FILE.")
     p.add_argument("-i", help="Allow insecure server connections when using SSL", action='store_true')
@@ -1409,11 +1428,11 @@ if __name__ == "__main__":
         s.ownopts['cli.history_file'] = args.l
     else:
         try:
-            s.ownopts['cli.history_file'] = expanduser("~") + "/.spiderfoot_history"
+            s.ownopts['cli.history_file'] = cliHistoryFile(expanduser("~"))
         except BaseException as e:
             s.dprint(f"Failed to set 'cli.history_file': {e}")
-            s.dprint("Using '.spiderfoot_history' in working directory")
-            s.ownopts['cli.history_file'] = ".spiderfoot_history"
+            s.dprint("Using '.floodplain_history' in working directory")
+            s.ownopts['cli.history_file'] = ".floodplain_history"
     if args.o:
         s.ownopts['cli.spool'] = True
         s.ownopts['cli.spool_file'] = args.o

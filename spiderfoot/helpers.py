@@ -76,46 +76,129 @@ class SpiderFootHelpers():
     """
 
     @staticmethod
+    def envPath(name: str) -> typing.Optional[str]:
+        """Return a path override from the environment.
+
+        ``FLOODPLAIN_<name>`` takes precedence over the legacy
+        ``SPIDERFOOT_<name>``. Empty values are ignored. Relative paths are
+        rejected (fail closed) so storage never depends on the working
+        directory.
+
+        Args:
+            name (str): suffix: ``DATA``, ``CACHE`` or ``LOGS``
+
+        Returns:
+            str: absolute path, or None if neither variable is set
+
+        Raises:
+            ValueError: the variable is set to a relative path
+        """
+        for var in (f"FLOODPLAIN_{name}", f"SPIDERFOOT_{name}"):
+            value = os.environ.get(var)
+            if not value:
+                continue
+            path = os.path.expanduser(value)
+            if not os.path.isabs(path):
+                raise ValueError(f"{var} must be an absolute path")
+            return os.path.normpath(path)
+        return None
+
+    @staticmethod
+    def homeDataPath(home: typing.Optional[str] = None) -> typing.Tuple[str, bool]:
+        """Resolve the default (non-environment) data directory.
+
+        ``~/.floodplain`` is used if it exists. Otherwise an existing legacy
+        ``~/.spiderfoot`` is used in place so existing scan history, config
+        and API keys keep working. Otherwise ``~/.floodplain`` is the
+        directory to create.
+
+        Args:
+            home (str): home directory (defaults to the current user's)
+
+        Returns:
+            tuple: (path, is_legacy)
+        """
+        home = home or str(Path.home())
+        current = os.path.join(home, ".floodplain")
+        legacy = os.path.join(home, ".spiderfoot")
+        if not os.path.isdir(current) and os.path.isdir(legacy):
+            return legacy, True
+        return current, False
+
+    @staticmethod
+    def ensureDir(path: str) -> str:
+        """Create a directory (owner-only permissions) if it does not exist.
+
+        Existing directories are left untouched. A non-directory at the path
+        raises, so callers fail closed instead of writing elsewhere.
+
+        Args:
+            path (str): directory path
+
+        Returns:
+            str: the path
+        """
+        os.makedirs(path, mode=0o700, exist_ok=True)
+        return path
+
+    @staticmethod
     def dataPath() -> str:
         """Returns the file system location of Floodplain data and configuration files.
+
+        Precedence: ``FLOODPLAIN_DATA`` > ``SPIDERFOOT_DATA`` >
+        ``~/.floodplain`` > existing legacy ``~/.spiderfoot`` > new ``~/.floodplain``.
 
         Returns:
             str: Floodplain data file system path
         """
-        path = os.environ.get('SPIDERFOOT_DATA')
-        if not path:
-            path = f"{Path.home()}/.spiderfoot/"
-        if not os.path.isdir(path):
-            os.makedirs(path, exist_ok=True)
-        return path
+        path = SpiderFootHelpers.envPath('DATA') or SpiderFootHelpers.homeDataPath()[0]
+        return SpiderFootHelpers.ensureDir(path)
 
     @staticmethod
     def cachePath() -> str:
-        """Returns the file system location of the cacha data files.
+        """Returns the file system location of the cache data files.
+
+        Precedence: ``FLOODPLAIN_CACHE`` > ``SPIDERFOOT_CACHE`` > ``<dataPath>/cache``.
 
         Returns:
             str: Floodplain cache file system path
         """
-        path = os.environ.get('SPIDERFOOT_CACHE')
-        if not path:
-            path = f"{Path.home()}/.spiderfoot/cache"
-        if not os.path.isdir(path):
-            os.makedirs(path, exist_ok=True)
-        return path
+        path = SpiderFootHelpers.envPath('CACHE') or os.path.join(SpiderFootHelpers.dataPath(), "cache")
+        return SpiderFootHelpers.ensureDir(path)
 
     @staticmethod
     def logPath() -> str:
         """Returns the file system location of Floodplain log files.
 
+        Precedence: ``FLOODPLAIN_LOGS`` > ``SPIDERFOOT_LOGS`` > ``<dataPath>/logs``.
+
         Returns:
-            str: Floodplain data file system path
+            str: Floodplain log file system path
         """
-        path = os.environ.get('SPIDERFOOT_LOGS')
-        if not path:
-            path = f"{Path.home()}/.spiderfoot/logs"
-        if not os.path.isdir(path):
-            os.makedirs(path, exist_ok=True)
-        return path
+        path = SpiderFootHelpers.envPath('LOGS') or os.path.join(SpiderFootHelpers.dataPath(), "logs")
+        return SpiderFootHelpers.ensureDir(path)
+
+    @staticmethod
+    def dataFile(name: str, legacyName: str) -> str:
+        """Path of a file in the data directory, honouring its legacy name.
+
+        Returns the legacy file only when it exists and the new one does not,
+        so existing installs keep their database/certificates and new
+        installs get Floodplain names.
+
+        Args:
+            name (str): current file name, e.g. ``floodplain.db``
+            legacyName (str): legacy file name, e.g. ``spiderfoot.db``
+
+        Returns:
+            str: full path to use
+        """
+        base = SpiderFootHelpers.dataPath()
+        current = os.path.join(base, name)
+        legacy = os.path.join(base, legacyName)
+        if not os.path.exists(current) and os.path.exists(legacy):
+            return legacy
+        return current
 
     @staticmethod
     def loadModulesAsDict(path: str, ignore_files: typing.Optional[typing.List[str]] = None) -> dict:

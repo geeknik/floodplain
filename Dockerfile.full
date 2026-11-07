@@ -67,16 +67,16 @@ RUN git clone https://github.com/drwetter/testssl.sh.git
 RUN pip3 install snallygaster trufflehog
 
 # Place database and logs outside installation directory
-ENV SPIDERFOOT_DATA /var/lib/floodplain
-ENV SPIDERFOOT_LOGS /var/lib/floodplain/log
-ENV SPIDERFOOT_CACHE /var/lib/floodplain/cache
+ENV FLOODPLAIN_DATA /var/lib/floodplain
+ENV FLOODPLAIN_LOGS /var/lib/floodplain/log
+ENV FLOODPLAIN_CACHE /var/lib/floodplain/cache
 
-RUN mkdir -p $SPIDERFOOT_DATA || true \
-    && mkdir -p $SPIDERFOOT_LOGS || true \
-    && mkdir -p $SPIDERFOOT_CACHE || true \
-    && chown floodplain:floodplain $SPIDERFOOT_DATA \
-    && chown floodplain:floodplain $SPIDERFOOT_LOGS \
-    && chown floodplain:floodplain $SPIDERFOOT_CACHE
+RUN mkdir -p $FLOODPLAIN_DATA || true \
+    && mkdir -p $FLOODPLAIN_LOGS || true \
+    && mkdir -p $FLOODPLAIN_CACHE || true \
+    && chown floodplain:floodplain $FLOODPLAIN_DATA \
+    && chown floodplain:floodplain $FLOODPLAIN_LOGS \
+    && chown floodplain:floodplain $FLOODPLAIN_CACHE
 
 WORKDIR /home/floodplain
 COPY . .

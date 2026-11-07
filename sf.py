@@ -62,7 +62,7 @@ def main() -> None:
         '_internettlds': 'https://publicsuffix.org/list/effective_tld_names.dat',
         '_internettlds_cache': 72,
         '_genericusers': ",".join(SpiderFootHelpers.usernamesFromWordlists(['generic-usernames'])),
-        '__database': f"{SpiderFootHelpers.dataPath()}/spiderfoot.db",
+        '__database': SpiderFootHelpers.dataFile("floodplain.db", "spiderfoot.db"),
         '__modules__': None,  # List of modules. Will be set after start-up.
         '__correlationrules__': None,  # List of correlation rules. Will be set after start-up.
         '_socks1type': '',
@@ -147,6 +147,10 @@ def main() -> None:
     logListenerSetup(loggingQueue, sfConfig)
     logWorkerSetup(loggingQueue)
     log = logging.getLogger(f"spiderfoot.{__name__}")
+
+    if SpiderFootHelpers.envPath('DATA') is None and SpiderFootHelpers.homeDataPath()[1]:
+        log.info(f"Using legacy data directory {SpiderFootHelpers.dataPath()}. "
+                 "Move it to ~/.floodplain (or set FLOODPLAIN_DATA) to adopt the new location.")
 
     # Add descriptions of the global config options
     sfConfig['__globaloptdescs__'] = sfOptdescs
@@ -524,7 +528,7 @@ def start_web_server(sfWebUiConfig: dict, sfConfig: dict, loggingQueue=None) -> 
     }
 
     secrets = dict()
-    passwd_file = SpiderFootHelpers.dataPath() + '/passwd'
+    passwd_file = os.path.join(SpiderFootHelpers.dataPath(), 'passwd')
     if os.path.isfile(passwd_file):
         if not os.access(passwd_file, os.R_OK):
             log.error("Could not read passwd file. Permission denied.")
@@ -562,13 +566,13 @@ def start_web_server(sfWebUiConfig: dict, sfConfig: dict, loggingQueue=None) -> 
         warn_msg = "\n********************************************************************\n"
         warn_msg += "Warning: passwd file contains no passwords. Authentication disabled.\n"
         warn_msg += "Please consider adding authentication to protect this instance!\n"
-        warn_msg += f"Create {SpiderFootHelpers.dataPath()}/passwd with one 'username:password' line per user.\n"
+        warn_msg += f"Create {os.path.join(SpiderFootHelpers.dataPath(), 'passwd')} with one 'username:password' line per user.\n"
         warn_msg += "********************************************************************\n"
         log.warning(warn_msg)
 
     using_ssl = False
-    key_path = SpiderFootHelpers.dataPath() + '/spiderfoot.key'
-    crt_path = SpiderFootHelpers.dataPath() + '/spiderfoot.crt'
+    key_path = SpiderFootHelpers.dataFile('floodplain.key', 'spiderfoot.key')
+    crt_path = SpiderFootHelpers.dataFile('floodplain.crt', 'spiderfoot.crt')
     if os.path.isfile(key_path) and os.path.isfile(crt_path):
         if not os.access(crt_path, os.R_OK):
             log.critical(f"Could not read {crt_path} file. Permission denied.")
@@ -642,22 +646,19 @@ if __name__ == '__main__':
         print("Floodplain requires -l <ip>:<port> to start the web server. Try --help for guidance.")
         sys.exit(-1)
 
-    # TODO: remove this after a few releases (added in 3.5 pre-release 2021-09-05)
-    from pathlib import Path
-    if os.path.exists('spiderfoot.db'):
-        print(f"ERROR: spiderfoot.db file exists in {os.path.dirname(__file__)}")
-        print("Floodplain no longer supports loading the spiderfoot.db database from the application directory.")
-        print(f"The database is now loaded from your home directory: {Path.home()}/.spiderfoot/spiderfoot.db")
-        print(f"This message will go away once you move or remove spiderfoot.db from {os.path.dirname(__file__)}")
+    # Refuse to run with a database or credentials file in the application
+    # directory: data must live in the data directory (see dataPath()).
+    try:
+        data_dir = SpiderFootHelpers.dataPath()
+    except (ValueError, OSError) as e:
+        print(f"ERROR: unusable Floodplain data directory: {e}")
         sys.exit(-1)
 
-    # TODO: remove this after a few releases (added in 3.5 pre-release 2021-09-05)
-    from pathlib import Path
-    if os.path.exists('passwd'):
-        print(f"ERROR: passwd file exists in {os.path.dirname(__file__)}")
-        print("Floodplain no longer supports loading credentials from the application directory.")
-        print(f"The passwd file is now loaded from your home directory: {Path.home()}/.spiderfoot/passwd")
-        print(f"This message will go away once you move or remove passwd from {os.path.dirname(__file__)}")
-        sys.exit(-1)
+    for stray in ('floodplain.db', 'spiderfoot.db', 'passwd'):
+        if os.path.exists(stray):
+            print(f"ERROR: {stray} file exists in the current directory ({os.getcwd()})")
+            print(f"Floodplain only loads databases and credentials from its data directory: {data_dir}")
+            print(f"This message will go away once you move or remove {stray} from the current directory.")
+            sys.exit(-1)
 
     main()
