@@ -10,7 +10,7 @@ The rebrand from "SpiderFoot" to "Floodplain" is **only partially done**: `VERSI
 
 ## Commands
 
-Python 3.10+ required (CI matrix: 3.10–3.13 on ubuntu + macOS).
+Python 3.11+ required (CI matrix: 3.11–3.13 on ubuntu + macOS). `requirements.lock` is generated with Python 3.11 (`pip-compile`, command in its header); transitive pins that need a floor (e.g. `soupsieve`) live at the bottom of `requirements.txt`.
 
 ```bash
 # Install runtime + dev/test deps

@@ -2,11 +2,10 @@
 
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/geeknik/floodplain/master/LICENSE)
-[![Python Version](https://img.shields.io/badge/python-3.10+-green)](https://www.python.org)
+[![Python Version](https://img.shields.io/badge/python-3.11+-green)](https://www.python.org)
 [![Stable Release](https://img.shields.io/badge/version-4.0-blue.svg)](https://github.com/geeknik/floodplain/releases/tag/v4.0)
 [![CI status](https://github.com/geeknik/floodplain/workflows/Tests/badge.svg)](https://github.com/geeknik/floodplain/actions?query=workflow%3A"Tests")
 [![Last Commit](https://img.shields.io/github/last-commit/geeknik/floodplain)](https://github.com/geeknik/floodplain/commits/master)
-[![Codecov](https://codecov.io/github/geeknik/floodplain/coverage.svg)](https://codecov.io/github/geeknik/floodplain)
 [![Twitter Follow](https://img.shields.io/twitter/follow/geeknik?label=follow&style=social)](https://x.com/geeknik)
 
 **Floodplain** is an open source intelligence (OSINT) automation tool. It integrates with just about every data source available and utilises a range of methods for data analysis, making that data easy to navigate. 
@@ -17,7 +16,7 @@ Floodplain has an embedded web-server for providing a clean and intuitive web-ba
 
 - Web based UI or CLI
 - Over 200 modules (see below)
-- Python 3.7+
+- Python 3.11+
 - YAML-configurable [correlation engine](/correlations/README.md) with [37 pre-defined rules](/correlations)
 - CSV/JSON/GEXF export
 - API key export/import
@@ -68,7 +67,7 @@ Floodplain's 200+ modules feed each other in a publisher/subscriber model to ens
 
 ### INSTALLING & RUNNING
 
-To install and run Floodplain, you need at least Python 3.10 and a number of Python libraries which you can install with `pip`. We recommend you install a packaged release since master will often have bleeding edge features and modules that aren't fully tested.
+To install and run Floodplain, you need at least Python 3.11 and a number of Python libraries which you can install with `pip`. We recommend you install a packaged release since master will often have bleeding edge features and modules that aren't fully tested.
 
 #### Stable build (packaged release):
 

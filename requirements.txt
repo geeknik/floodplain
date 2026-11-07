@@ -8,9 +8,14 @@
 #
 # Phase 0 security bumps (2026-06): cryptography, pyOpenSSL and lxml moved past
 # fixed-version caps that carried known CVEs; PyPDF2 (archived/EOL) replaced by pypdf.
+#
+# 2026-11 security bumps: Python floor raised to 3.11 (CPython 3.10 is EOL and
+# the Pillow 13 / dnspython 2.9 fixes require 3.11). dnspython, pypdf,
+# cryptography (+ pyOpenSSL for compatibility) bumped; transitive pillow,
+# urllib3, certifi, soupsieve and setuptools refreshed in requirements.lock.
 
 adblockparser==0.7
-dnspython==2.8.0
+dnspython==2.9.2
 ExifRead==2.3.2
 CherryPy==18.10.0
 cherrypy-cors==1.7.0
@@ -24,14 +29,19 @@ ipwhois==1.1.0
 ipaddr==2.2.0
 phonenumbers==8.13.55
 pygexf==0.2.2
-pypdf==6.13.2
+pypdf==6.21.4
 python-whois==0.7.3
 secure==0.3.0
-pyOpenSSL==26.3.0
+pyOpenSSL==26.4.0
 python-docx==0.8.11
 python-pptx==0.6.23
 networkx==2.6.3
-cryptography==49.0.0
+cryptography==50.0.2
 publicsuffixlist==0.9.4
 openpyxl==3.1.5
 pyyaml==6.0.3
+#
+# Transitive pins (not imported directly):
+#   soupsieve (via beautifulsoup4): 2.10 carries the 2026 CVE fixes and still
+#   supports every Python 3.11.x; 3.x/4.x require >=3.11.5 (breaks Debian 12's 3.11.2).
+soupsieve==2.10

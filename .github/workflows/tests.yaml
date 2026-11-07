@@ -38,7 +38,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13"]
         os: [ubuntu-latest, macos-latest]
 
     steps:
@@ -56,8 +56,9 @@ jobs:
       - name: Run unit tests
         run: |
           python -m pytest test/unit -n auto --dist loadfile --durations=5 --cov-report=term --cov=.
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          fail_ci_if_error: false
-          verbose: true
+      # Coverage is self-hosted (no third-party upload): publish the summary
+      # table to the job summary page.
+      - name: Coverage summary
+        if: always()
+        run: |
+          python -m coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY" || true

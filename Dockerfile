@@ -32,24 +32,27 @@
 # Running floodplain unit tests in container
 #
 #   sudo docker build -t floodplain-test --build-arg REQUIREMENTS=test/requirements.txt .
-#   sudo docker run --rm floodplain-test -m pytest --flake8 .
+#   sudo docker run --rm floodplain-test -m pytest test/unit
+#
+# Python 3.11+ is required. Both stages use the same official Python image so
+# the virtualenv built in the first stage runs unchanged in the second.
 
-FROM alpine:3.12.4 AS build
+FROM python:3.13-alpine3.24 AS build
 ARG REQUIREMENTS=requirements.txt
-RUN apk add --no-cache gcc git curl python3 python3-dev py3-pip swig tinyxml-dev \
- python3-dev musl-dev openssl-dev libffi-dev libxslt-dev libxml2-dev jpeg-dev \
- openjpeg-dev zlib-dev cargo rust
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin":$PATH
-COPY $REQUIREMENTS requirements.txt ./
-RUN ls
-RUN echo "$REQUIREMENTS"
-RUN pip3 install -U pip
-RUN pip3 install -r "$REQUIREMENTS"
+RUN apk add --no-cache gcc musl-dev swig tinyxml-dev openssl-dev libffi-dev \
+ libxslt-dev libxml2-dev jpeg-dev openjpeg-dev zlib-dev cargo rust
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+WORKDIR /build
+COPY requirements.txt requirements.lock ./
+COPY test/requirements.txt test/requirements.txt
+# Runtime dependencies are installed hash-verified from the lockfile.
+RUN pip install --no-cache-dir --require-hashes -r requirements.lock
+# Optional extras (e.g. test tooling) on top of the locked runtime set.
+RUN if [ "$REQUIREMENTS" != "requirements.txt" ]; then pip install --no-cache-dir -r "$REQUIREMENTS"; fi
 
 
-
-FROM alpine:3.13.0
+FROM python:3.13-alpine3.24
 WORKDIR /home/floodplain
 
 # Place database and logs outside installation directory
@@ -58,7 +61,7 @@ ENV FLOODPLAIN_LOGS /var/lib/floodplain/log
 ENV FLOODPLAIN_CACHE /var/lib/floodplain/cache
 
 # Run everything as one command so that only one layer is created
-RUN apk --update --no-cache add python3 musl openssl libxslt tinyxml libxml2 jpeg zlib openjpeg \
+RUN apk --update --no-cache add libxslt tinyxml libxml2 jpeg zlib openjpeg \
     && addgroup floodplain \
     && adduser -G floodplain -h /home/floodplain -s /sbin/nologin \
                -g "Floodplain User" -D floodplain \

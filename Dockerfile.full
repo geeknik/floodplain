@@ -6,7 +6,7 @@
 # Written by: TheTechromancer
 #
 
-FROM python:3
+FROM python:3.13-trixie
 
 # Install tools/dependencies from apt
 RUN apt-get -y update && apt-get -y install nbtscan onesixtyone nmap
@@ -87,7 +87,6 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN python -m venv "$VIRTUAL_ENV"
 
 ARG REQUIREMENTS=requirements.txt
-COPY "$REQUIREMENTS" requirements.txt
 
 RUN chown -R floodplain:floodplain /tools
 RUN chown -R floodplain:floodplain "$VIRTUAL_ENV"
@@ -95,8 +94,8 @@ RUN chown -R floodplain:floodplain "/home/floodplain"
 
 USER floodplain
 
-RUN pip install -U pip
-RUN pip install -r "$REQUIREMENTS"
+RUN pip install --no-cache-dir --require-hashes -r requirements.lock
+RUN if [ "$REQUIREMENTS" != "requirements.txt" ]; then pip install --no-cache-dir -r "$REQUIREMENTS"; fi
 
 # Install Python tools
 RUN pip install dnstwist

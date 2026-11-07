@@ -11,6 +11,11 @@
 # Licence:     MIT
 # -------------------------------------------------------------------------------
 
+import sys
+
+if sys.version_info < (3, 11):  # checked before third-party imports so the message is readable
+    sys.exit("Floodplain requires Python 3.11 or higher.")
+
 import argparse
 import logging
 import multiprocessing as mp
@@ -18,7 +23,6 @@ import os
 import os.path
 import random
 import signal
-import sys
 import time
 from copy import deepcopy
 
@@ -638,10 +642,6 @@ def handle_abort(signal, frame) -> None:
 
 
 if __name__ == '__main__':
-    if sys.version_info < (3, 10):
-        print("Floodplain requires Python 3.10 or higher.")
-        sys.exit(-1)
-
     if len(sys.argv) <= 1:
         print("Floodplain requires -l <ip>:<port> to start the web server. Try --help for guidance.")
         sys.exit(-1)
