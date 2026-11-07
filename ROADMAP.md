@@ -21,7 +21,7 @@
 
 Floodplain is a healthy SpiderFoot 4.0 fork. The bones are good; the surface is stale.
 
-- **208 OSINT modules** (`modules/sfp_*.py`; 232 inherited, 26 dead removed and 2 added in 2026-11 — see `docs/module-health-2026-11.md`), CherryPy web UI (`sfwebui.py`), CLI (`sfcli.py`), SQLite backend (`spiderfoot/db.py`), YAML correlation engine (`spiderfoot/correlation.py`, 37 rules).
+- **209 OSINT modules** (`modules/sfp_*.py`; 232 inherited, 26 dead removed and 3 added in 2026-11 (InternetDB, Hudson Rock, Brave Search; BitcoinAbuse replaced by Chainabuse) — see `docs/module-health-2026-11.md`), CherryPy web UI (`sfwebui.py`), CLI (`sfcli.py`), SQLite backend (`spiderfoot/db.py`), YAML correlation engine (`spiderfoot/correlation.py`, 37 rules).
 - **Core unit tests pass** on Python 3.10 (verified: `test/unit/spiderfoot/` event + target suites, 59 passed / 88 subtests). The codebase is functional, not broken.
 - **No dangerous code patterns** in core: no `eval`, no `exec`, no `pickle`, no `shell=True`. External-tool modules (`sfp_tool_*`) use list-form `Popen` (safe invocation style).
 - **The rebrand is barely started.** ~4,973 `spiderfoot` references across ~692 Python files; package dir is still `spiderfoot/`, modules still use the `sfp_` prefix, entrypoints are still `sf*.py`, `VERSION` still reads `SpiderFoot 4.0.0`.

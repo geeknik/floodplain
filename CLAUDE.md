@@ -71,9 +71,10 @@ pip-audit --strict -r requirements.lock        # full locked closure (hash-pinne
 - `target.py` — `SpiderFootTarget`: target value + type + aliases.
 - `threadpool.py` — `SpiderFootThreadPool` for intra-module concurrency.
 - `helpers.py` — `SpiderFootHelpers`: module/rule loading (`loadModulesAsDict`, `loadCorrelationRulesRaw`), `dataPath()` / `cachePath()` / `logPath()` / `dataFile()` (precedence: `FLOODPLAIN_DATA` > legacy `SPIDERFOOT_DATA` > `~/.floodplain` > existing legacy `~/.spiderfoot`; env paths must be absolute; dirs created 0700; legacy file names like `spiderfoot.db` are kept when present), target-type detection, scan ID generation, wordlists.
+- `websearch.py` — shared web-search providers (`BraveSearch`, `GoogleCustomSearch` until its 2027-01-01 shutdown) behind one `search(query, max_results)` interface; `providerFromOpts()` picks one from module options (one key option per provider), `hostMatches()` does subdomain-boundary URL checks. Use this instead of calling a search API from a module.
 - `logger.py` — multiprocessing-safe logging via a shared queue (`logListenerSetup`/`logWorkerSetup`); modules log through `self.debug/info/error`, which inject the `scanId`.
 
-### Modules (`modules/`, ~209 files, `sfp_*.py`)
+### Modules (`modules/`, ~210 files, `sfp_*.py`)
 Each module is a single file defining a class named identically to the file (`sfp_dnsresolve.py` → `class sfp_dnsresolve(SpiderFootPlugin)`). A module declares:
 - `meta` dict — `name`, `summary`, `flags`, `useCases` (`Footprint`/`Investigate`/`Passive`), `categories`, and (for API modules) `dataSource` with `apiKeyInstructions`.
 - `opts` / `optdescs` — user-configurable options and their descriptions.

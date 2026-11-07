@@ -10,37 +10,27 @@
 # Licence:     MIT
 # -------------------------------------------------------------------------------
 
+import json
 import re
-import urllib.error
 import urllib.parse
-import urllib.request
 
 from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from spiderfoot.websearch import BraveSearch, GoogleCustomSearch, WebSearchFatal, hostMatches
 
+# Site name -> (search query template, profile domain, profile URL patterns).
+# Queries are URL-encoded by the search provider; patterns run against result
+# URLs only, and a match is only accepted if its host is the profile domain.
 sites = {
-    # Search string to use, domain name the profile will sit on within
-    # those search results.
-    "Facebook": [
-        "\"{name}\"+site:facebook.com",
-        [
-            r'[ \'"](https?://[a-z\.]*facebook.[a-z\.]+/[^/"\'<> ]+/?)[\'"]',
-            r'(https?%3a%2f%2f[a-z\.]*facebook.[a-z\.]+%2f[^\/"\'<> ]+/?)',
-        ],
-    ],
-    "Google+": [
-        "\"{name}\"+site:plus.google.com",
-        [
-            r'[ \'"](https?://plus.google.[a-z\.]+/\d+[^"\'<>\/ ]+)[\'"]',
-            r'(https?%3a%2f%2fplus.google.[a-z\.]+%2f\d+[^\/"\'<> ]+)',
-        ],
-    ],
-    "LinkedIn": [
-        "\"{name}\"+site:linkedin.com",
-        [
-            r'["\' ](https?://[a-z\.]*linkedin.[a-z\.]+/[^\?"\'<> ]+)[\'"]',
-            r'(https?%3a%2f%2f[a-z\.]*linkedin.[a-z\.]+%2f[^\?"\'<> ]+)',
-        ],
-    ],
+    "Facebook": (
+        '"{name}" site:facebook.com',
+        "facebook.com",
+        [r'^(https?://(?:[a-z0-9-]+\.)*facebook\.com/[^/?#"\'<> ]+/?)'],
+    ),
+    "LinkedIn": (
+        '"{name}" site:linkedin.com',
+        "linkedin.com",
+        [r'^(https?://(?:[a-z0-9-]+\.)*linkedin\.com/in/[^/?#"\'<> ]+/?)'],
+    ),
 }
 
 
@@ -53,54 +43,46 @@ class sfp_socialprofiles(SpiderFootPlugin):
         'useCases': ["Footprint", "Passive"],
         'categories': ["Social Media"],
         'dataSource': {
-            'website': "https://developers.google.com/custom-search",
+            'website': "https://brave.com/search/api/",
             'model': "FREE_AUTH_LIMITED",
             'references': [
-                "https://developers.google.com/custom-search/v1",
-                "https://developers.google.com/custom-search/docs/overview",
-                "https://cse.google.com/cse"
+                "https://api-dashboard.search.brave.com/documentation/services/web-search",
+                "https://developers.google.com/custom-search/v1/overview"
             ],
             'apiKeyInstructions': [
-                "If using Google:",
-                "Visit https://developers.google.com/custom-search/v1/introduction",
-                "Register a free Google account",
-                "Click on 'Get A Key'",
-                "Connect a Project",
-                "The API Key will be listed under 'YOUR API KEY'",
-                "If using Bing:",
-                "Visit https://azure.microsoft.com/en-in/services/cognitive-services/bing-web-search-api/",
-                "Register a free account",
-                "Select on Bing Custom Search",
-                "The API keys are listed under 'Key1' and 'Key2' (both should work)"
+                "Recommended: Brave Search API",
+                "Visit https://api-dashboard.search.brave.com and create an account",
+                "Subscribe to the Search plan (includes $5 of free credit each month, about 1,000 requests)",
+                "Open 'API Keys', create a key and set it as brave_api_key",
+                "Legacy (until 2027-01-01): set method to 'google' with an existing Google Custom Search API key and engine ID"
             ],
-            'favIcon': "https://www.gstatic.com/devrel-devsite/prod/v2210deb8920cd4a55bd580441aa58e7853afc04b39a9d9ac4198e1cd7fbe04ef/developers/images/favicon.png",
-            'logo': "https://www.gstatic.com/devrel-devsite/prod/v2210deb8920cd4a55bd580441aa58e7853afc04b39a9d9ac4198e1cd7fbe04ef/developers/images/favicon.png",
-            'description': "Google Custom Search enables you to create a search engine for your website, your blog, or a collection of websites. "
-            "You can configure your engine to search both web pages and images. "
-            "You can fine-tune the ranking, add your own promotions and customize the look and feel of the search results. "
-            "You can monetize the search by connecting your engine to your Google AdSense account.",
+            'favIcon': "https://brave.com/static-assets/images/brave-favicon.png",
+            'description': "Searches the web (Brave Search API, or Google Custom Search until it is "
+            "discontinued on 2027-01-01) for social media profiles matching human names found in the scan.",
         }
     }
 
     # Default options
     opts = {
-        "count": 20,
-        "method": "bing",
+        "method": "brave",
+        "max_results": 20,
         "tighten": True,
-        "bing_api_key": "",
+        "brave_api_key": "",
         "google_api_key": "",
         "google_cse_id": "013611106330597893267:tfgl3wxdtbp",
     }
 
     # Option descriptions
     optdescs = {
-        "count": "Number of bing search engine results of identified profiles to iterate through.",
-        "method": "Search engine to use: 'google' or 'bing'.",
+        "method": "Search engine to use: 'brave' (default) or 'google' (discontinued 2027-01-01).",
+        "max_results": "Maximum search results to inspect per site (20 per billed Brave request, up to 100).",
         "tighten": "Tighten results by expecting to find the keyword of the target domain mentioned in the social media profile page results?",
-        "bing_api_key": "Bing API Key for social media profile search.",
-        "google_api_key": "Google API Key for social media profile search.",
-        "google_cse_id": "Google Custom Search Engine ID.",
+        "brave_api_key": "Brave Search API key.",
+        "google_api_key": "Google API Key (legacy).",
+        "google_cse_id": "Google Custom Search Engine ID (legacy).",
     }
+
+    MAX_PROFILE_BYTES = 2 * 1024 * 1024
 
     keywords = None
     results = None
@@ -112,6 +94,8 @@ class sfp_socialprofiles(SpiderFootPlugin):
         self.keywords = None
         self.errorState = False
 
+        # Per-instance copy: never mutate the class-level defaults.
+        self.opts = dict(self.opts)
         for opt in list(userOpts.keys()):
             self.opts[opt] = userOpts[opt]
 
@@ -125,21 +109,41 @@ class sfp_socialprofiles(SpiderFootPlugin):
     def producedEvents(self):
         return ["SOCIAL_MEDIA", "RAW_RIR_DATA"]
 
+    def provider(self):
+        """Build the configured search provider.
+
+        Returns:
+            WebSearchProvider: provider, or None if not configured
+        """
+        method = str(self.opts.get("method", "brave")).lower()
+        timeout = self.opts.get("_fetchtimeout", 15)
+        useragent = self.opts.get("_useragent", "Floodplain")
+        if method == "brave" and self.opts.get("brave_api_key"):
+            return BraveSearch(self.sf, self.opts["brave_api_key"], timeout, useragent)
+        if method == "google" and self.opts.get("google_api_key") and self.opts.get("google_cse_id"):
+            return GoogleCustomSearch(self.sf, self.opts["google_api_key"], self.opts["google_cse_id"], timeout, useragent)
+        return None
+
     # Handle events sent to this module
     def handleEvent(self, event):
         eventName = event.eventType
         srcModuleName = event.module
         eventData = event.data
-        self.currentEventSrc = event
 
         if self.errorState:
             return
 
         self.debug(f"Received event, {eventName}, from {srcModuleName}")
 
-        if self.opts['google_api_key'] == "" and self.opts['bing_api_key'] == "":
-            self.error("You enabled sfp_socialprofiles but did not set a Google or Bing API key!")
+        provider = self.provider()
+        if provider is None:
+            self.error(f"You enabled sfp_socialprofiles but method '{self.opts.get('method')}' has no API key configured "
+                       "(use method 'brave' with brave_api_key).")
             self.errorState = True
+            return
+
+        if not isinstance(eventData, str) or not eventData.strip() or len(eventData) > 100 or any(c in eventData for c in '"\t\r\n'):
+            self.debug("Skipping malformed name.")
             return
 
         if eventData in self.results:
@@ -155,72 +159,38 @@ class sfp_socialprofiles(SpiderFootPlugin):
             if len(self.keywords) == 0:
                 self.keywords = None
 
-        for site in sites:
-            s = str(sites[site][0]).format(name=eventData)
-            searchStr = s.replace(" ", "%20")
-            res = None
-
-            if self.opts["method"].lower() == "yahoo":
-                self.error(
-                    "Yahoo is no longer supported. Please try 'bing' or 'google'."
-                )
-                return
-
-            if self.opts["method"].lower() == "google":
-                res = self.sf.googleIterate(
-                    searchString=searchStr,
-                    opts={
-                        "timeout": self.opts["_fetchtimeout"],
-                        "useragent": self.opts["_useragent"],
-                        "api_key": self.opts["google_api_key"],
-                        "cse_id": self.opts["google_cse_id"],
-                    },
-                )
-                self.__dataSource__ = "Google"
-
-            if self.opts["method"].lower() == "bing":
-                res = self.sf.bingIterate(
-                    searchString=searchStr,
-                    opts={
-                        "timeout": self.opts["_fetchtimeout"],
-                        "useragent": self.opts["_useragent"],
-                        "count": self.opts["count"],
-                        "api_key": self.opts["bing_api_key"],
-                    },
-                )
-                self.__dataSource__ = "Bing"
-
-            if res is None:
-                self.info("No data returned from " + self.opts["method"] + ".")
-                continue
-
+        for site, (template, domain, patterns) in sites.items():
             if self.checkForStop():
                 return
 
+            try:
+                res = provider.search(template.format(name=eventData), self.opts["max_results"])
+            except WebSearchFatal as e:
+                self.error(str(e))
+                self.errorState = True
+                return
+
+            if res is None:
+                self.info(f"No data returned from {provider.name}.")
+                continue
+
+            self.__dataSource__ = provider.name
+
             # Submit the results for analysis
-            evt = SpiderFootEvent(
-                "RAW_RIR_DATA", str(res), self.__name__, event
-            )
+            evt = SpiderFootEvent("RAW_RIR_DATA", json.dumps(res), self.__name__, event)
             self.notifyListeners(evt)
 
             instances = list()
-            for searchDom in sites[site][1]:
-                # Search both the urls & the search engine web content
-                search_string = " ".join(res["urls"] + [str(res)])
-
-                matches = re.findall(
-                    searchDom, search_string, re.IGNORECASE | re.MULTILINE
-                )
-
-                if not matches:
-                    continue
-
-                for match in matches:
-                    self.debug("Match found: " + match)
-                    if match in instances:
+            for url in res["urls"]:
+                for pattern in patterns:
+                    m = re.match(pattern, url, re.IGNORECASE)
+                    if not m:
                         continue
-
+                    match = urllib.parse.unquote(m.group(1))
+                    if match in instances or not hostMatches(match, domain):
+                        continue
                     instances.append(match)
+                    self.debug("Match found: " + match)
 
                     if self.checkForStop():
                         return
@@ -229,15 +199,12 @@ class sfp_socialprofiles(SpiderFootPlugin):
                     # for a firm relationship.
                     # Keywords might be empty if the target was an IP, subnet or name.
                     if self.opts["tighten"] and self.keywords:
-                        match = urllib.parse.unquote(match)
-                        self.debug(
-                            "Tightening results to look for " + str(self.keywords)
-                        )
+                        self.debug("Tightening results to look for " + str(self.keywords))
                         pres = self.sf.fetchUrl(
                             match,
                             timeout=self.opts["_fetchtimeout"],
-                            useragent=self.opts["_useragent"],
-                            verify=False
+                            useragent=self.opts.get("_useragent", "Floodplain"),
+                            sizeLimit=self.MAX_PROFILE_BYTES,
                         )
 
                         if pres["content"] is None:
@@ -246,17 +213,17 @@ class sfp_socialprofiles(SpiderFootPlugin):
                         found = False
                         for kw in self.keywords:
                             if re.search(
-                                r"[^a-zA-Z\-\_]" + kw + r"[^a-zA-Z\-\_]",
+                                r"[^a-zA-Z\-\_]" + re.escape(kw) + r"[^a-zA-Z\-\_]",
                                 pres["content"],
                                 re.IGNORECASE,
                             ):
                                 found = True
+                                break
 
                         if not found:
                             continue
 
                     self.info("Social Media Profile found at " + site + ": " + match)
-                    match = urllib.parse.unquote(match)
                     evt = SpiderFootEvent(
                         "SOCIAL_MEDIA", site + ": <SFURL>" + match + "</SFURL>", self.__name__, event
                     )

@@ -10,14 +10,17 @@
 # Licence:     MIT
 # -------------------------------------------------------------------------------
 
+import json
+
 from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from spiderfoot.websearch import GoogleCustomSearch, WebSearchFatal, hostMatches
 
 
 class sfp_googlesearch(SpiderFootPlugin):
 
     meta = {
         'name': "Google",
-        'summary': "Obtain information from the Google Custom Search API to identify sub-domains and links.",
+        'summary': "Obtain information from the Google Custom Search API to identify sub-domains and links (API discontinued by Google on 2027-01-01; use Brave Search).",
         'flags': ["apikey"],
         'useCases': ["Footprint", "Investigate", "Passive"],
         'categories': ["Search Engines"],
@@ -66,6 +69,8 @@ class sfp_googlesearch(SpiderFootPlugin):
         self.results = self.tempStorage()
         self.errorState = False
 
+        # Per-instance copy: never mutate the class-level defaults.
+        self.opts = dict(self.opts)
         for opt in list(userOpts.keys()):
             self.opts[opt] = userOpts[opt]
 
@@ -94,46 +99,43 @@ class sfp_googlesearch(SpiderFootPlugin):
             self.errorState = True
             return
 
-        if eventData in self.results:
-            self.debug("Already did a search for " + eventData + ", skipping.")
+        if not isinstance(eventData, str) or any(c in eventData for c in ' "\'\t\r\n'):
+            return
+        host = eventData.lower().rstrip('.')
+
+        if host in self.results:
+            self.debug("Already did a search for " + host + ", skipping.")
             return
 
-        self.results[eventData] = True
+        self.results[host] = True
 
-        # Sites hosted on the domain
-        res = self.sf.googleIterate(
-            searchString="site:" + eventData,
-            opts={
-                "timeout": self.opts["_fetchtimeout"],
-                "useragent": self.opts["_useragent"],
-                "api_key": self.opts["api_key"],
-                "cse_id": self.opts["cse_id"],
-            },
-        )
+        provider = GoogleCustomSearch(self.sf, self.opts['api_key'], self.opts['cse_id'],
+                                      self.opts.get('_fetchtimeout', 15), self.opts.get('_useragent', "Floodplain"))
+        try:
+            res = provider.search(f"site:{host}", 10)
+        except WebSearchFatal as e:
+            self.error(str(e))
+            self.errorState = True
+            return
+
         if res is None:
             # Failed to talk to the Google API or no results returned
             return
 
-        urls = res["urls"]
-        new_links = list(set(urls) - set(self.results.keys()))
-
-        # Add new links to results
-        for link in new_links:
+        internal_links = []
+        for link in res["urls"]:
+            if link in self.results or not hostMatches(link, host):
+                continue
             self.results[link] = True
+            internal_links.append(link)
 
-        internal_links = [
-            link for link in new_links if self.sf.urlFQDN(link).endswith(eventData)
-        ]
         for link in internal_links:
             self.debug("Found a link: " + link)
-
             evt = SpiderFootEvent("LINKED_URL_INTERNAL", link, self.__name__, event)
             self.notifyListeners(evt)
 
         if internal_links:
-            evt = SpiderFootEvent(
-                "RAW_RIR_DATA", str(res), self.__name__, event
-            )
+            evt = SpiderFootEvent("RAW_RIR_DATA", json.dumps(res), self.__name__, event)
             self.notifyListeners(evt)
 
 # End of sfp_googlesearch class

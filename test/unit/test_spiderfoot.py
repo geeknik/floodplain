@@ -737,17 +737,3 @@ class TestSpiderFoot(unittest.TestCase):
 
         check_dns_wildcard = sf.checkDnsWildcard('local')
         self.assertIsInstance(check_dns_wildcard, bool)
-
-    @unittest.skip("todo")
-    def test_google_iterate(self):
-        sf = SpiderFoot(self.default_options)
-
-        sf.googleIterate(None, None)
-        self.assertEqual('TBD', 'TBD')
-
-    @unittest.skip("todo")
-    def test_bing_iterate(self):
-        sf = SpiderFoot(self.default_options)
-
-        sf.bingIterate(None, None)
-        self.assertEqual('TBD', 'TBD')

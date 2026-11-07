@@ -132,6 +132,7 @@ Bitcoin Finder|Identify bitcoin addresses in scraped webpages.|Internal
 [Blockchain](https://www.blockchain.com/)|Queries blockchain.info to find the balance of identified bitcoin wallet addresses.|Free API
 [blocklist.de](http://www.blocklist.de/en/index.html)|Check if a netblock or IP is malicious according to blocklist.de.|Free API
 [BotScout](https://botscout.com/)|Searches BotScout.com's database of spam-bot IP addresses and e-mail addresses.|Tiered API
+[Brave Search](https://brave.com/search/api/)|Search the Brave Search API for pages hosted on the target to identify sub-domains and links.|Tiered API
 [BuiltWith](https://builtwith.com/)|Query BuiltWith.com's Domain API for information about your target's web technology stack, e-mail addresses and more.|Tiered API
 [C99](https://api.c99.nl/)|Queries the C99 API which offers various data (geo location, proxy detection, phone lookup, etc).|Commercial API
 [Censys](https://censys.io/)|Obtain host information from Censys.io.|Tiered API
@@ -183,7 +184,7 @@ File Metadata Extractor|Extracts meta data from documents and images.|Internal
 [FullHunt](https://fullhunt.io/)|Identify domain attack surface using FullHunt API.|Tiered API
 [Github](https://github.com/)|Identify associated public code repositories on Github.|Free API
 [GLEIF](https://search.gleif.org/)|Look up company information from Global Legal Entity Identifier Foundation (GLEIF).|Tiered API
-[Google](https://developers.google.com/custom-search)|Obtain information from the Google Custom Search API to identify sub-domains and links.|Tiered API
+[Google](https://developers.google.com/custom-search)|Obtain information from the Google Custom Search API to identify sub-domains and links (API discontinued by Google on 2027-01-01; use Brave Search).|Tiered API
 [Google Maps](https://cloud.google.com/maps-platform/)|Identifies potential physical addresses and latitude/longitude coordinates.|Tiered API
 [Google Object Storage Finder](https://cloud.google.com/storage)|Search for potential Google Object Storage buckets associated with the target and attempt to list their contents.|Free API
 [Google SafeBrowsing](https://developers.google.com/safe-browsing/v4/lookup-api)|Check if the URL is included on any of the Safe Browsing lists.|Free API
@@ -239,7 +240,7 @@ Junk File Finder|Looks for old/temporary and other similar files.|Internal
 [OpenPhish](https://openphish.com/)|Check if a host/domain is malicious according to OpenPhish.com.|Free API
 [OpenStreetMap](https://www.openstreetmap.org/)|Retrieves latitude/longitude coordinates for physical addresses from OpenStreetMap API.|Free API
 Page Information|Obtain information about web pages (do they take passwords, do they contain forms, etc.)|Internal
-[PasteBin](https://pastebin.com/)|PasteBin search (via Google Search API) to identify related content.|Tiered API
+[PasteBin](https://pastebin.com/)|PasteBin search (via the Brave Search API, or Google Custom Search until 2027-01-01) to identify related content.|Tiered API
 PGP Key Servers|Look up domains and e-mail addresses in PGP public key servers.|Internal
 [PhishStats](https://phishstats.info/)|Check if a netblock or IP address is malicious according to PhishStats.|Tiered API
 [PhishTank](https://phishtank.com/)|Check if a host/domain is malicious according to PhishTank.|Free API
@@ -263,7 +264,7 @@ Similar Domain Finder|Search various sources to identify similar looking domain 
 [SlideShare](https://www.slideshare.net)|Gather name and location from SlideShare profiles.|Free API
 [Snov](https://snov.io/)|Gather available email IDs from identified domains|Tiered API
 [Social Links](https://sociallinks.io/)|Queries SocialLinks.io to gather intelligence from social media platforms and dark web.|Commercial API
-[Social Media Profile Finder](https://developers.google.com/custom-search)|Tries to discover the social media profiles for human names identified.|Tiered API
+[Social Media Profile Finder](https://brave.com/search/api/)|Tries to discover the social media profiles for human names identified.|Tiered API
 Social Network Identifier|Identify presence on social media networks such as LinkedIn, Twitter and others.|Internal
 [SpamCop](https://www.spamcop.net/)|Check if a netblock or IP address is in the SpamCop database.|Free API
 [Spamhaus Zen](https://www.spamhaus.org/)|Check if a netblock or IP address is in the Spamhaus Zen database.|Free API
