@@ -130,7 +130,6 @@ Base64 Decoder|Identify Base64-encoded strings in URLs, often revealing interest
 Binary String Extractor|Attempt to identify strings in binary content.|Internal
 Bitcoin Finder|Identify bitcoin addresses in scraped webpages.|Internal
 [Bitcoin Who's Who](https://bitcoinwhoswho.com/)|Check for Bitcoin addresses against the Bitcoin Who's Who database of suspect/malicious addresses.|Tiered API
-[BitcoinAbuse](https://www.bitcoinabuse.com/)|Check Bitcoin addresses against the bitcoinabuse.com database of suspect/malicious addresses.|Free API
 [Blockchain](https://www.blockchain.com/)|Queries blockchain.info to find the balance of identified bitcoin wallet addresses.|Free API
 [blocklist.de](http://www.blocklist.de/en/index.html)|Check if a netblock or IP is malicious according to blocklist.de.|Free API
 [BotScout](https://botscout.com/)|Searches BotScout.com's database of spam-bot IP addresses and e-mail addresses.|Tiered API
@@ -139,6 +138,7 @@ Bitcoin Finder|Identify bitcoin addresses in scraped webpages.|Internal
 [Censys](https://censys.io/)|Obtain host information from Censys.io.|Tiered API
 [Certificate Transparency](https://crt.sh/)|Gather hostnames from historical certificates in crt.sh.|Free API
 [CertSpotter](https://sslmate.com/certspotter/)|Gather information about SSL certificates from SSLMate CertSpotter API.|Tiered API
+[Chainabuse](https://www.chainabuse.com/)|Check Bitcoin addresses against Chainabuse (formerly BitcoinAbuse) scam reports.|Tiered API
 [CINS Army List](https://cinsscore.com/)|Check if a netblock or IP address is malicious according to Collective Intelligence Network Security (CINS) Army list.|Free API
 [CIRCL.LU](https://www.circl.lu/)|Obtain information from CIRCL.LU's Passive DNS and Passive SSL databases.|Free API
 [CleanBrowsing.org](https://cleanbrowsing.org/)|Check if a host would be blocked by CleanBrowsing.org DNS content filters.|Free API
@@ -242,7 +242,7 @@ Junk File Finder|Looks for old/temporary and other similar files.|Internal
 Page Information|Obtain information about web pages (do they take passwords, do they contain forms, etc.)|Internal
 [PasteBin](https://pastebin.com/)|PasteBin search (via Google Search API) to identify related content.|Tiered API
 PGP Key Servers|Look up domains and e-mail addresses in PGP public key servers.|Internal
-[PhishStats](https://phishstats.info/)|Check if a netblock or IP address is malicious according to PhishStats.|Free API
+[PhishStats](https://phishstats.info/)|Check if a netblock or IP address is malicious according to PhishStats.|Tiered API
 [PhishTank](https://phishtank.com/)|Check if a host/domain is malicious according to PhishTank.|Free API
 Phone Number Extractor|Identify phone numbers in scraped webpages.|Internal
 Port Scanner - TCP|Scans for commonly open TCP ports on Internet-facing systems.|Internal

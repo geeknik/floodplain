@@ -1105,29 +1105,38 @@ class SpiderFoot:
             }
         return session
 
-    def removeUrlCreds(self, url: str) -> str:
-        """Remove potentially sensitive strings (such as "key=..." and "password=...") from a string.
+    # name=value pairs, matched only at a name boundary so scanning is linear.
+    _PARAM_RE = re.compile(r'(?i)(?<![a-z0-9_.-])([a-z0-9_.-]+)=([^&#\s]*)')
+    # Parameter names whose values are treated as secrets in logs, e.g. key,
+    # apiKey, api_key, access_key, api_token, auth, password, sig, session_id.
+    # Over-redaction is acceptable; leaks are not.
+    _SECRET_NAME_RE = re.compile(r'(?i)(?:key|token|secret|pass|password|passwd|auth|authorization|sig|signature|session|sessionid|session_id|sid|cred|creds|credential|credentials|user|username)$')
+    _URL_USERINFO_RE = re.compile(r'(?i)(?<![a-z0-9+.-])([a-z][a-z0-9+.-]{0,31}://)[^/@\s]{1,512}@')
 
-        Used to remove potential credentials from URLs prior during logging.
+    def removeUrlCreds(self, url: str) -> str:
+        """Remove potentially sensitive values (API keys, tokens, passwords) from a string.
+
+        Used to remove potential credentials from URLs, and from exception
+        messages that embed URLs, prior to logging. Parameter names are
+        matched case-insensitively and only the value is replaced, so the
+        rest of the URL remains useful for debugging.
 
         Args:
-            url (str): URL
+            url (str): URL or any log text
 
         Returns:
-            str: Sanitized URL
+            str: Sanitized text
         """
-        pats = {
-            r'key=\S+': "key=XXX",
-            r'pass=\S+': "pass=XXX",
-            r'user=\S+': "user=XXX",
-            r'password=\S+': "password=XXX"
-        }
+        if not isinstance(url, str):
+            url = str(url)
 
-        ret = url
-        for pat in pats:
-            ret = re.sub(pat, pats[pat], ret, re.IGNORECASE)
+        def redact(m):
+            if self._SECRET_NAME_RE.search(m.group(1)):
+                return f"{m.group(1)}=XXX"
+            return m.group(0)
 
-        return ret
+        ret = self._URL_USERINFO_RE.sub(r'\1XXX@', url)
+        return self._PARAM_RE.sub(redact, ret)
 
     def isValidLocalOrLoopbackIp(self, ip: str) -> bool:
         """Check if the specified IPv4 or IPv6 address is a loopback or local network IP address (IPv4 RFC1918 / IPv6 RFC4192 ULA).
@@ -1247,11 +1256,11 @@ class SpiderFoot:
         try:
             parsed_url = urllib.parse.urlparse(url)
         except Exception:
-            self.debug(f"Could not parse URL: {url}")
+            self.debug(f"Could not parse URL: {self.removeUrlCreds(url)}")
             return None
 
         if parsed_url.scheme != 'http' and parsed_url.scheme != 'https':
-            self.debug(f"Invalid URL scheme for URL: {url}")
+            self.debug(f"Invalid URL scheme for URL: {self.removeUrlCreds(url)}")
             return None
 
         request_log = []
@@ -1297,9 +1306,9 @@ class SpiderFoot:
                 )
             except Exception as e:
                 if noLog:
-                    self.debug(f"Unexpected exception ({e}) occurred fetching (HEAD only) URL: {url}", exc_info=True)
+                    self.debug(f"Unexpected exception ({type(e).__name__}: {self.removeUrlCreds(e)}) occurred fetching (HEAD only) URL: {self.removeUrlCreds(url)}")
                 else:
-                    self.error(f"Unexpected exception ({e}) occurred fetching (HEAD only) URL: {url}", exc_info=True)
+                    self.error(f"Unexpected exception ({type(e).__name__}: {self.removeUrlCreds(e)}) occurred fetching (HEAD only) URL: {self.removeUrlCreds(url)}")
 
                 return result
 
@@ -1341,9 +1350,9 @@ class SpiderFoot:
 
                 except Exception as e:
                     if noLog:
-                        self.debug(f"Unexpected exception ({e}) occurred fetching (HEAD only) URL: {result['realurl']}", exc_info=True)
+                        self.debug(f"Unexpected exception ({type(e).__name__}: {self.removeUrlCreds(e)}) occurred fetching (HEAD only) URL: {self.removeUrlCreds(result['realurl'])}")
                     else:
-                        self.error(f"Unexpected exception ({e}) occurred fetching (HEAD only) URL: {result['realurl']}", exc_info=True)
+                        self.error(f"Unexpected exception ({type(e).__name__}: {self.removeUrlCreds(e)}) occurred fetching (HEAD only) URL: {self.removeUrlCreds(result['realurl'])}")
 
                     return result
 
@@ -1378,13 +1387,13 @@ class SpiderFoot:
                     verify=verify
                 )
         except requests.exceptions.RequestException as e:
-            self.error(f"Failed to connect to {url}: {e}")
+            self.error(f"Failed to connect to {self.removeUrlCreds(url)}: {self.removeUrlCreds(e)}")
             return result
         except Exception as e:
             if noLog:
-                self.debug(f"Unexpected exception ({e}) occurred fetching URL: {url}", exc_info=True)
+                self.debug(f"Unexpected exception ({type(e).__name__}: {self.removeUrlCreds(e)}) occurred fetching URL: {self.removeUrlCreds(url)}")
             else:
-                self.error(f"Unexpected exception ({e}) occurred fetching URL: {url}", exc_info=True)
+                self.error(f"Unexpected exception ({type(e).__name__}: {self.removeUrlCreds(e)}) occurred fetching URL: {self.removeUrlCreds(url)}")
 
             return result
 
@@ -1438,7 +1447,7 @@ class SpiderFoot:
                     result["content"] = res.content
 
         except Exception as e:
-            self.error(f"Unexpected exception ({e}) occurred parsing response for URL: {url}", exc_info=True)
+            self.error(f"Unexpected exception ({type(e).__name__}: {self.removeUrlCreds(e)}) occurred parsing response for URL: {self.removeUrlCreds(url)}")
             result['content'] = None
             result['status'] = str(e)
 

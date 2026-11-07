@@ -12,11 +12,10 @@
 # -------------------------------------------------------------------------------
 
 import json
-import urllib.error
+import time
 import urllib.parse
-import urllib.request
 
-from netaddr import IPNetwork
+from netaddr import IPAddress, IPNetwork
 
 from spiderfoot import SpiderFootEvent, SpiderFootPlugin
 
@@ -26,14 +25,20 @@ class sfp_phishstats(SpiderFootPlugin):
     meta = {
         'name': "PhishStats",
         'summary': "Check if a netblock or IP address is malicious according to PhishStats.",
-        'flags': [],
+        'flags': ["apikey"],
         'useCases': ["Investigate", "Passive"],
         'categories': ["Reputation Systems"],
         'dataSource': {
             'website': "https://phishstats.info/",
-            'model': "FREE_NOAUTH_UNLIMITED",
+            'model': "FREE_NOAUTH_LIMITED",
             'references': [
-                "https://phishstats.info/#apidoc"
+                "https://phishstats.info/api-docs",
+                "https://phishstats.info/faq"
+            ],
+            'apiKeyInstructions': [
+                "Optional: without a key PhishStats allows 50 requests/day per IP",
+                "Visit https://phishstats.info and register a free account",
+                "Go to Settings > API keys and create a key (150 requests/day free)"
             ],
             'favIcon': "https://phishstats.info/phish.ico",
             'description': "PhishStats is a real time Phishing database that gathers phishing URLs from several sources.",
@@ -41,6 +46,7 @@ class sfp_phishstats(SpiderFootPlugin):
     }
 
     opts = {
+        'api_key': '',
         'checkaffiliates': True,
         'netblocklookup': True,
         'maxnetblock': 24,
@@ -49,6 +55,7 @@ class sfp_phishstats(SpiderFootPlugin):
     }
 
     optdescs = {
+        'api_key': "PhishStats API key (optional; raises the daily request limit).",
         'checkaffiliates': "Apply checks to affiliates?",
         'netblocklookup': "Look up all IPs on netblocks deemed to be owned by your target for possible blacklisted hosts on the same target subdomain/domain?",
         'maxnetblock': "If looking up owned netblocks, the maximum netblock size to look up all IPs within (CIDR value, 24 = /24, 16 = /16, etc.)",
@@ -64,6 +71,8 @@ class sfp_phishstats(SpiderFootPlugin):
         self.results = self.tempStorage()
         self.errorState = False
 
+        # Per-instance copy: never mutate the class-level defaults.
+        self.opts = dict(self.opts)
         for opt in list(userOpts.keys()):
             self.opts[opt] = userOpts[opt]
 
@@ -88,35 +97,101 @@ class sfp_phishstats(SpiderFootPlugin):
             "RAW_RIR_DATA",
         ]
 
+    API_URL = "https://api.phishstats.info/api/phishing"
+    MAX_RESPONSE_BYTES = 256 * 1024
+    # Published limit: 20 requests/minute.
+    QUERY_INTERVAL = 3.1
+
     # Check whether the IP address is malicious using PhishStats API
-    # https://phishstats.info/
+    # https://phishstats.info/api-docs
     def queryIPAddress(self, qry):
+        """Look up an IP address in PhishStats.
+
+        Args:
+            qry (str): IP address
+
+        Returns:
+            list: matching records, or None
+        """
+        # The address is interpolated into PhishStats' filter syntax, so only
+        # a canonical IP may reach it (no ',', ')' or '~or' injection).
+        try:
+            ip = str(IPAddress(qry))
+        except Exception:
+            self.debug("Skipping invalid IP address.")
+            return None
+
         params = {
-            '_where': f"(ip,eq,{qry})",
+            '_where': f"(ip,eq,{ip})",
             '_size': 1
         }
 
         headers = {
             'Accept': "application/json",
         }
+        if self.opts.get('api_key'):
+            headers['X-API-Key'] = self.opts['api_key']
 
         res = self.sf.fetchUrl(
-            'https://phishstats.info:2096/api/phishing?' + urllib.parse.urlencode(params),
+            f"{self.API_URL}?{urllib.parse.urlencode(params)}",
             headers=headers,
             timeout=15,
-            useragent=self.opts['_useragent']
+            useragent=self.opts.get('_useragent', "Floodplain"),
+            sizeLimit=self.MAX_RESPONSE_BYTES
         )
 
-        if res['code'] != "200":
-            self.debug(f"No information found from PhishStats for {qry}.")
+        code = str(res.get('code'))
+        if code in ('401', '403'):
+            self.error("PhishStats rejected the API key.")
+            self.errorState = True
+            return None
+        if code == '429':
+            self.error("PhishStats request limit reached; set an API key to raise it.")
+            self.errorState = True
+            return None
+        if code != "200" or not res.get('content'):
+            self.debug(f"No information found from PhishStats for {ip}.")
             return None
 
         try:
-            return json.loads(res['content'])
-        except Exception as e:
+            data = json.loads(res['content'])
+        except (ValueError, TypeError) as e:
             self.error(f"Error processing JSON response: {e}")
+            return None
 
-        return None
+        if not isinstance(data, list):
+            return None
+        return [r for r in data if isinstance(r, dict)]
+
+    def netblockAllowed(self, netblock, max_prefix):
+        """Check a netblock is IPv4 and no larger than the configured maximum.
+
+        Bounds the number of lookups regardless of the event's claimed type,
+        so a mislabelled or hostile IPv6 prefix can never expand to 2^64 hosts.
+
+        Args:
+            netblock (str): CIDR netblock
+            max_prefix (int): smallest allowed IPv4 prefix length
+
+        Returns:
+            bool: netblock may be expanded
+        """
+        try:
+            net = IPNetwork(netblock)
+            max_prefix = int(max_prefix)
+        except Exception:
+            self.debug("Skipping invalid netblock.")
+            return False
+
+        if net.version != 4 or not 0 <= max_prefix <= 32:
+            self.debug(f"Skipping non-IPv4 or out-of-range netblock {netblock}.")
+            return False
+
+        if net.prefixlen < max_prefix:
+            self.debug(f"Network size bigger than permitted: {net.prefixlen} < {max_prefix}")
+            return False
+
+        return True
 
     def handleEvent(self, event):
         eventName = event.eventType
@@ -145,9 +220,7 @@ class sfp_phishstats(SpiderFootPlugin):
             if not self.opts['subnetlookup']:
                 return
 
-            max_subnet = self.opts['maxsubnet']
-            if IPNetwork(eventData).prefixlen < max_subnet:
-                self.debug(f"Network size bigger than permitted: {IPNetwork(eventData).prefixlen} > {max_subnet}")
+            if not self.netblockAllowed(eventData, self.opts['maxsubnet']):
                 return
 
             malicious_type = "MALICIOUS_SUBNET"
@@ -156,9 +229,7 @@ class sfp_phishstats(SpiderFootPlugin):
             if not self.opts['netblocklookup']:
                 return
 
-            max_netblock = self.opts['maxnetblock']
-            if IPNetwork(eventData).prefixlen < max_netblock:
-                self.debug(f"Network size bigger than permitted: {IPNetwork(eventData).prefixlen} > {max_netblock}")
+            if not self.netblockAllowed(eventData, self.opts['maxnetblock']):
                 return
 
             malicious_type = "MALICIOUS_NETBLOCK"
@@ -173,11 +244,18 @@ class sfp_phishstats(SpiderFootPlugin):
                 qrylist.append(str(ipaddr))
                 self.results[str(ipaddr)] = True
         else:
-            qrylist.append(eventData)
-
-        for addr in qrylist:
-            if self.checkForStop():
+            try:
+                qrylist.append(str(IPAddress(eventData)))
+            except Exception:
+                self.debug("Skipping invalid IP address.")
                 return
+
+        for i, addr in enumerate(qrylist):
+            if self.checkForStop() or self.errorState:
+                return
+
+            if i:
+                time.sleep(self.QUERY_INTERVAL)
 
             data = self.queryIPAddress(addr)
 
@@ -185,11 +263,7 @@ class sfp_phishstats(SpiderFootPlugin):
                 continue
 
             # TODO: iterate through hosts and extract co-hosts
-            try:
-                maliciousIP = data[0].get('ip')
-            except Exception:
-                # If ArrayIndex is out of bounds then data doesn't exist
-                continue
+            maliciousIP = data[0].get('ip')
 
             if not maliciousIP:
                 continue
@@ -209,7 +283,7 @@ class sfp_phishstats(SpiderFootPlugin):
             else:
                 pevent = event
 
-            evt = SpiderFootEvent("RAW_RIR_DATA", str(data), self.__name__, pevent)
+            evt = SpiderFootEvent("RAW_RIR_DATA", json.dumps(data), self.__name__, pevent)
             self.notifyListeners(evt)
 
             text = f"PhishStats [{addr}]"

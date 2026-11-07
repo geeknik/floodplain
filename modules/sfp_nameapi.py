@@ -12,8 +12,9 @@
 # -------------------------------------------------------------------------------
 
 import json
+import urllib.parse
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_nameapi(SpiderFootPlugin):
@@ -56,10 +57,16 @@ class sfp_nameapi(SpiderFootPlugin):
     results = None
     errorState = False
 
+    API_URL = "https://api.nameapi.org/rest/v5.3/email/disposableemailaddressdetector"
+    MAX_RESPONSE_BYTES = 64 * 1024
+
     def setup(self, sfc, userOpts=dict()):
         self.sf = sfc
         self.results = self.tempStorage()
+        self.errorState = False
 
+        # Per-instance copy: never mutate the class-level defaults.
+        self.opts = dict(self.opts)
         for opt in list(userOpts.keys()):
             self.opts[opt] = userOpts[opt]
 
@@ -74,23 +81,76 @@ class sfp_nameapi(SpiderFootPlugin):
             "RAW_RIR_DATA"
         ]
 
+    @staticmethod
+    def isApiKeyFault(content) -> bool:
+        """Detect NameAPI's "invalid api-key" fault (HTTP 400, error codes 11xx).
+
+        Args:
+            content (str): response body
+
+        Returns:
+            bool: the fault concerns the API key
+        """
+        try:
+            data = json.loads(content or '')
+        except (ValueError, TypeError):
+            return False
+        if not isinstance(data, dict):
+            return False
+        code = str(data.get('applicationErrorCode', ''))
+        message = data.get('message') if isinstance(data.get('message'), str) else ''
+        return code.startswith('11') or 'api-key' in message.lower() or 'apikey' in message.lower()
+
     def queryEmailAddr(self, qry):
+        """Ask NameAPI whether an email address is disposable.
+
+        NameAPI only accepts the key as a query parameter, so the request is
+        HTTPS-only and sflib redacts ``apiKey=`` from every log line.
+
+        Args:
+            qry (str): validated email address
+
+        Returns:
+            str: "YES", "NO" or "UNKNOWN", or None on error
+        """
+        params = urllib.parse.urlencode({'apiKey': self.opts['api_key'], 'emailAddress': qry})
         res = self.sf.fetchUrl(
-            f"http://api.nameapi.org/rest/v5.3/email/disposableemailaddressdetector?apiKey={self.opts['api_key']}&emailAddress={qry}",
+            f"{self.API_URL}?{params}",
             timeout=self.opts['_fetchtimeout'],
-            useragent=self.opts.get('_useragent', "Floodplain")
+            useragent=self.opts.get('_useragent', "Floodplain"),
+            sizeLimit=self.MAX_RESPONSE_BYTES
         )
 
-        if res['content'] is None:
-            self.info(f"No NameAPI info found for {qry}")
+        code = str(res.get('code'))
+        if code == '400' and self.isApiKeyFault(res.get('content')):
+            # Do not log the response: NameAPI echoes the submitted key back.
+            self.error("NameAPI rejected the API key.")
+            self.errorState = True
+            return None
+        if code in ('401', '403'):
+            self.error("NameAPI rejected the API key.")
+            self.errorState = True
+            return None
+        if code == '429':
+            self.error("NameAPI rate limit or quota exceeded.")
+            self.errorState = True
+            return None
+        if code != '200' or not res.get('content'):
+            self.info(f"No NameAPI result for {qry} (HTTP {code})")
             return None
 
         try:
-            return json.loads(res['content'])
-        except Exception as e:
+            data = json.loads(res['content'])
+        except (ValueError, TypeError) as e:
             self.error(f"Error processing JSON response from NameAPI: {e}")
+            return None
 
-        return None
+        if not isinstance(data, dict):
+            return None
+        verdict = data.get('disposable')
+        if verdict not in ("YES", "NO", "UNKNOWN"):
+            return None
+        return verdict
 
     # Handle events sent to this module
     def handleEvent(self, event):
@@ -103,24 +163,26 @@ class sfp_nameapi(SpiderFootPlugin):
 
         self.debug(f"Received event, {eventName}, from {srcModuleName}")
 
-        if self.opts["api_key"] == "":
+        if not self.opts["api_key"]:
             self.error(
                 f"You enabled {self.__class__.__name__} but did not set an API key!"
             )
             self.errorState = True
             return
 
-        self.results[eventData] = True
-
-        data = self.queryEmailAddr(eventData)
-
-        if data is None:
+        if not isinstance(eventData, str) or not SpiderFootHelpers.validEmail(eventData):
+            self.debug("Skipping invalid email address.")
             return
 
-        isDisposable = data.get('disposable')
+        email = eventData.lower()
+        if email in self.results:
+            return
+        self.results[email] = True
 
-        if isDisposable == "YES":
-            evt = SpiderFootEvent("RAW_RIR_DATA", str(data), self.__name__, event)
+        verdict = self.queryEmailAddr(email)
+
+        if verdict == "YES":
+            evt = SpiderFootEvent("RAW_RIR_DATA", json.dumps({'emailAddress': email, 'disposable': verdict}), self.__name__, event)
             self.notifyListeners(evt)
 
             evt = SpiderFootEvent("EMAILADDR_DISPOSABLE", eventData, self.__name__, event)

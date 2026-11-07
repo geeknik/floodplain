@@ -10,7 +10,7 @@ alive, migrated, retiring, or dead, and records the action taken.
 |---|---|---|
 | **Dead** | 26 | Removed in this commit |
 | **Retiring** (shutdown announced) | 5 | Replace before cutoff (Google CSE: **2027-01-01**) |
-| **Migrated / needs a fix** | 5 | Fix in a follow-up |
+| **Migrated / needs a fix** | 5 | Fixed 2026-11-07 (see below) |
 | **Watch** (ambiguous) | 5 | Keep; re-check next sweep |
 | **Answering** (host up) | ~138 | Keep — reachability only, not deep API validation |
 
@@ -101,15 +101,24 @@ from git history if a service returns.
 **Priority:** the three Google-CSE modules need a new web-search backend
 (e.g. Brave Search API, SerpAPI) within ~8 weeks.
 
-## Migrated / needs a fix
+## Migrated / needs a fix — fixed 2026-11-07
 
-| Module | Fix |
+| Module | Fix applied |
 |---|---|
-| `sfp_phishstats` | Move to `https://api.phishstats.info/api/phishing` with optional `X-API-Key` header ([FAQ](https://phishstats.info/faq)); old `:2096` endpoint returns 522. |
-| `sfp_emailrep` | Unauthenticated API now disabled (HTTP 429 "please use an API key"); make `api_key` mandatory. |
-| `sfp_nameapi` | Switch `http://` → `https://` (v5.3 still current). |
-| `sfp_bitcoinabuse` | Merged into Chainabuse (TRM Labs, 2023); old URLs 301 to `chainabuse.com`. Port to the authenticated Chainabuse API. |
-| `sfp_koodous` | API alive (`401` without token); handle 401 as missing/invalid key. |
+| `sfp_phishstats` | Moved to `https://api.phishstats.info/api/phishing`; optional `X-API-Key` header (anonymous: 50 req/day/IP). IP validated before it enters PhishStats' `_where` filter syntax (blocks `~or(...)` injection); netblock expansion IPv4-only and size-bounded; 401/403/429 stop the module; self-throttled to the published 20 req/min. Model now `FREE_NOAUTH_LIMITED`. |
+| `sfp_emailrep` | API key now mandatory (unauthenticated API disabled). Email validated and URL-encoded before it is placed in the request path (previously raw concatenation allowed path injection with the key header attached). |
+| `sfp_nameapi` | `http://` → `https://` (the key is a query parameter and was sent in cleartext). Email validated and URL-encoded; verdict allow-listed; results de-duplicated. |
+| `sfp_bitcoinabuse` | **Replaced by `sfp_chainabuse`** (TRM Labs Chainabuse API, HTTP Basic auth). Free keys allow 10 calls/month, so lookups are capped per scan (`max_queries`, default 5) and de-duplicated. Only a structured summary is emitted; reporters' free-text descriptions, losses, evidence and IPs are discarded. Bitcoin only for now — Ethereum needs a `MALICIOUS_ETHEREUM_ADDRESS` event type plus an event-type migration for existing databases. |
+| `sfp_koodous` | 401 *and* 403 treated as missing/invalid key. Also fixed: a "no results" 404 disabled the module for the rest of the scan; `results: null` crashed it; untrusted `sha256`/app name were embedded raw in `<SFURL>` markup; pagination now hard-capped at 50 pages with a validated cursor. |
+
+Cross-cutting fix found during this work: `sflib.removeUrlCreds()` passed
+`re.IGNORECASE` as the positional `count` argument, so redaction was
+case-sensitive and `apiKey=` (NameAPI) was written to the logs on every
+request. Five `fetchUrl` error paths also logged raw URLs and tracebacks.
+Redaction is now case-insensitive, covers userinfo and common key names
+(`key`, `apiKey`, `access_key`, `api_token`, `auth`, `sig`, `session_id`, ...),
+is linear-time, and is applied to every `fetchUrl` log line and exception
+message.
 
 ## Watch list (keep; re-check next sweep)
 

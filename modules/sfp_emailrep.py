@@ -12,8 +12,9 @@
 
 import json
 import time
+import urllib.parse
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_emailrep(SpiderFootPlugin):
@@ -50,18 +51,19 @@ class sfp_emailrep(SpiderFootPlugin):
     }
 
     optdescs = {
-        'api_key': 'EmailRep API key.',
+        'api_key': 'EmailRep API key (required; EmailRep no longer answers unauthenticated queries).',
     }
 
     results = None
     errorState = False
-    errorWarned = False
 
     def setup(self, sfc, userOpts=dict()):
         self.sf = sfc
         self.results = self.tempStorage()
         self.errorState = False
 
+        # Per-instance copy: never mutate the class-level defaults.
+        self.opts = dict(self.opts)
         for opt in list(userOpts.keys()):
             self.opts[opt] = userOpts[opt]
 
@@ -71,54 +73,65 @@ class sfp_emailrep(SpiderFootPlugin):
     def producedEvents(self):
         return ['RAW_RIR_DATA', 'EMAILADDR_COMPROMISED', 'MALICIOUS_EMAILADDR']
 
-    # https://emailrep.io/docs/
+    MAX_RESPONSE_BYTES = 256 * 1024
+
+    # https://docs.emailrep.io/
     def query(self, qry):
+        """Look up an email address on EmailRep.
+
+        Args:
+            qry (str): validated, lower-cased email address
+
+        Returns:
+            dict: EmailRep response, or None
+        """
         headers = {
-            'Accept': "application/json"
+            'Accept': "application/json",
+            'Key': self.opts['api_key'],
         }
 
-        if self.opts['api_key'] != '':
-            headers['Key'] = self.opts['api_key']
-
         res = self.sf.fetchUrl(
-            'https://emailrep.io/' + qry,
+            'https://emailrep.io/' + urllib.parse.quote(qry, safe='@'),
             headers=headers,
             useragent=self.opts.get('_useragent', "Floodplain"),
-            timeout=self.opts['_fetchtimeout']
+            timeout=self.opts['_fetchtimeout'],
+            sizeLimit=self.MAX_RESPONSE_BYTES
         )
 
-        # Documentation does not indicate rate limit threshold (50 queries/day)
+        # Stay well under the free-tier rate limit.
         time.sleep(1)
 
-        if res['content'] is None:
+        code = str(res.get('code'))
+
+        if code == '400':
+            self.debug(f"EmailRep rejected the query for {qry} as invalid.")
             return None
 
-        if res['code'] == '400':
-            self.error('API error: Bad request')
+        if code in ('401', '403'):
+            self.error("EmailRep rejected the API key (HTTP 401/403).")
             self.errorState = True
             return None
 
-        if res['code'] == '401':
-            self.error('API error: Invalid API key')
+        if code == '429':
+            self.error("EmailRep rate limit exceeded.")
             self.errorState = True
             return None
 
-        if res['code'] == '429':
-            self.error('API error: Too Many Requests')
-            self.errorState = True
+        if code == '404':
             return None
 
-        if res['code'] != '200':
-            self.error('Unexpected reply from EmailRep.io: ' + res['code'])
+        if code != '200' or not res.get('content'):
+            self.error(f"Unexpected reply from EmailRep.io: HTTP {code}")
             self.errorState = True
             return None
 
         try:
-            return json.loads(res['content'])
-        except Exception as e:
+            data = json.loads(res['content'])
+        except (ValueError, TypeError) as e:
             self.debug(f"Error processing JSON response: {e}")
+            return None
 
-        return None
+        return data if isinstance(data, dict) else None
 
     def handleEvent(self, event):
         eventName = event.eventType
@@ -128,39 +141,47 @@ class sfp_emailrep(SpiderFootPlugin):
         if self.errorState:
             return
 
-        if eventData in self.results:
-            return
-
-        self.results[eventData] = True
-
         self.debug(f"Received event, {eventName}, from {srcModuleName}")
 
-        if self.opts['api_key'] == '' and not self.errorWarned:
-            self.error("Warning: You enabled sfp_emailrep but did not set an API key! Queries will be rate limited.")
-            self.errorWarned = True
+        # EmailRep disabled unauthenticated queries (HTTP 429 "please use an
+        # API key"), so a key is required.
+        if not self.opts['api_key']:
+            self.error(f"You enabled {self.__class__.__name__} but did not set an API key!")
+            self.errorState = True
+            return
 
-        res = self.query(eventData)
+        if not isinstance(eventData, str) or not SpiderFootHelpers.validEmail(eventData):
+            self.debug("Skipping invalid email address.")
+            return
+
+        email = eventData.lower()
+        if email in self.results:
+            return
+
+        self.results[email] = True
+
+        res = self.query(email)
 
         if res is None:
             return
 
         details = res.get('details')
 
-        if not details:
+        if not isinstance(details, dict):
             return
 
-        credentials_leaked = details.get('credentials_leaked')
+        credentials_leaked = details.get('credentials_leaked') is True
         if credentials_leaked:
             evt = SpiderFootEvent('EMAILADDR_COMPROMISED', eventData + " [Unknown]", self.__name__, event)
             self.notifyListeners(evt)
 
-        malicious_activity = details.get('malicious_activity')
+        malicious_activity = details.get('malicious_activity') is True
         if malicious_activity:
             evt = SpiderFootEvent('MALICIOUS_EMAILADDR', 'EmailRep [' + eventData + ']', self.__name__, event)
             self.notifyListeners(evt)
 
         if malicious_activity or credentials_leaked:
-            evt = SpiderFootEvent('RAW_RIR_DATA', str(res), self.__name__, event)
+            evt = SpiderFootEvent('RAW_RIR_DATA', json.dumps(res), self.__name__, event)
             self.notifyListeners(evt)
 
 # End of sfp_emailrep class
