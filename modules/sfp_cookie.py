@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_cookie
-# Purpose:      SpiderFoot plug-in for extracting cookies from HTTP headers.
+# Purpose:      Floodplain module for extracting cookies from HTTP headers.
 #
 # Author:      Steve Micallef <steve@binarypool.com>
 #

@@ -1,7 +1,7 @@
 #  -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sflib
-# Purpose:      Common functions used by SpiderFoot modules.
+# Purpose:      Common functions used by Floodplain modules.
 #
 # Author:      Steve Micallef <steve@binarypool.com>
 #
@@ -42,11 +42,11 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)  # noqa: DUO
 
 
 class SpiderFoot:
-    """SpiderFoot
+    """Floodplain
 
     Attributes:
         dbh (SpiderFootDb): database handle
-        scanId (str): scan ID this instance of SpiderFoot is being used in
+        scanId (str): scan ID this instance of Floodplain is being used in
         socksProxy (str): SOCKS proxy
         opts (dict): configuration options
     """
@@ -56,7 +56,7 @@ class SpiderFoot:
     opts = dict()
 
     def __init__(self, options: dict) -> None:
-        """Initialize SpiderFoot object.
+        """Initialize Floodplain object.
 
         Args:
             options (dict): dictionary of configuration options.
@@ -119,7 +119,7 @@ class SpiderFoot:
 
     @scanId.setter
     def scanId(self, scanId: str) -> str:
-        """Set the scan ID this instance of SpiderFoot is being used in.
+        """Set the scan ID this instance of Floodplain is being used in.
 
         Args:
             scanId (str): scan instance ID
@@ -307,7 +307,7 @@ class SpiderFoot:
         """Convert a Python dictionary to something storable in the database.
 
         Args:
-            opts (dict): Dictionary of SpiderFoot configuration options
+            opts (dict): Dictionary of Floodplain configuration options
             filterSystem (bool): TBD
 
         Returns:
@@ -372,7 +372,7 @@ class SpiderFoot:
         to a dictionary for Python to process.
 
         Args:
-            opts (dict): SpiderFoot configuration options
+            opts (dict): Floodplain configuration options
             referencePoint (dict): needed to know the actual types the options are supposed to be.
             filterSystem (bool): Ignore global "system" configuration options
 
@@ -1204,7 +1204,7 @@ class SpiderFoot:
         url: str,
         cookies: str = None,
         timeout: int = 30,
-        useragent: str = "SpiderFoot",
+        useragent: str = "Floodplain",
         headers: dict = None,
         noLog: bool = False,
         postData: str = None,

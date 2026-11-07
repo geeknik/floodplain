@@ -92,7 +92,7 @@ class sfp_shodan(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://api.shodan.io/shodan/host/{qry}?key={self.opts['api_key']}",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot"
+            useragent=self.opts.get('_useragent', "Floodplain")
         )
         time.sleep(1)
 
@@ -126,7 +126,7 @@ class sfp_shodan(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://api.shodan.io/shodan/host/search?{urllib.parse.urlencode(params)}",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot"
+            useragent=self.opts.get('_useragent', "Floodplain")
         )
         time.sleep(1)
 
@@ -160,7 +160,7 @@ class sfp_shodan(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://api.shodan.io/shodan/host/search?{urllib.parse.urlencode(params)}",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot"
+            useragent=self.opts.get('_useragent', "Floodplain")
         )
         time.sleep(1)
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_keybase
-# Purpose:     Spiderfoot plugin to query KeyBase API
+# Purpose:     Floodplain module to query KeyBase API
 #              to gather additional information about domain names and identified
 #              usernames.
 #

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_dnsbrute
-# Purpose:      SpiderFoot plug-in for attempting to resolve through brute-forcing
+# Purpose:      Floodplain module for attempting to resolve through brute-forcing
 #               common hostnames.
 #
 # Author:      Steve Micallef <steve@binarypool.com>

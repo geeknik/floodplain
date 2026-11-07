@@ -113,7 +113,7 @@ class sfp_viewdns(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://api.viewdns.info/{querytype}/?{params}",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot"
+            useragent=self.opts.get('_useragent', "Floodplain")
         )
 
         if res['code'] in ["400", "429", "500", "403"]:

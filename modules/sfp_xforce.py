@@ -145,7 +145,7 @@ class sfp_xforce(SpiderFootPlugin):
             'Authorization': "Basic " + token.decode('utf-8')
         }
         url = xforce_url + "/" + querytype + "/" + qry
-        res = self.sf.fetchUrl(url, timeout=self.opts['_fetchtimeout'], useragent="SpiderFoot", headers=headers)
+        res = self.sf.fetchUrl(url, timeout=self.opts['_fetchtimeout'], useragent=self.opts.get('_useragent', "Floodplain"), headers=headers)
 
         return self.parseApiResponse(res)
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_azureblobstorage
-# Purpose:      SpiderFoot plug-in for identifying potential Azure blobs related
+# Purpose:      Floodplain module for identifying potential Azure blobs related
 #               to the target.
 #
 # Author:      Steve Micallef <steve@binarypool.com>
@@ -71,7 +71,7 @@ class sfp_azureblobstorage(SpiderFootPlugin):
         return ["CLOUD_STORAGE_BUCKET"]
 
     def checkSite(self, url):
-        res = self.sf.fetchUrl(url, timeout=10, useragent="SpiderFoot", noLog=True)
+        res = self.sf.fetchUrl(url, timeout=10, useragent=self.opts.get('_useragent', "Floodplain"), noLog=True)
 
         if res['code']:
             with self.lock:

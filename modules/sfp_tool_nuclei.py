@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_tool_nuclei
-# Purpose:      SpiderFoot plug-in for using the 'Nuclei' tool.
+# Purpose:      Floodplain module for using the 'Nuclei' tool.
 #               Tool: https://github.com/EnableSecurity/nuclei
 #
 # Author:      Steve Micallef <steve@binarypool.com>

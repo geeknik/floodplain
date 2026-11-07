@@ -91,7 +91,7 @@ class sfp_builtwith(SpiderFootPlugin):
     def queryRelationships(self, t):
         url = f"https://api.builtwith.com/rv1/api.json?LOOKUP={t}&KEY={self.opts['api_key']}"
 
-        res = self.sf.fetchUrl(url, timeout=self.opts['_fetchtimeout'], useragent="SpiderFoot")
+        res = self.sf.fetchUrl(url, timeout=self.opts['_fetchtimeout'], useragent=self.opts.get('_useragent', "Floodplain"))
 
         if res['code'] == "404":
             return None
@@ -109,7 +109,7 @@ class sfp_builtwith(SpiderFootPlugin):
     def queryDomainInfo(self, t):
         url = f"https://api.builtwith.com/rv1/api.json?LOOKUP={t}&KEY={self.opts['api_key']}"
 
-        res = self.sf.fetchUrl(url, timeout=self.opts['_fetchtimeout'], useragent="SpiderFoot")
+        res = self.sf.fetchUrl(url, timeout=self.opts['_fetchtimeout'], useragent=self.opts.get('_useragent', "Floodplain"))
 
         if res['code'] == "404":
             return None

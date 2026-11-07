@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_tool_snallygaster
-# Purpose:     SpiderFoot plug-in for using the snallygaster tool.
+# Purpose:     Floodplain module for using the snallygaster tool.
 #              Tool: https://github.com/hannob/snallygaster
 #
 # Author:      <steve@binarypool.com>

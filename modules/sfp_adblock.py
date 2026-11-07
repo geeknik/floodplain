@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_adblock
-# Purpose:      SpiderFoot plug-in to test if external/internally linked pages
+# Purpose:      Floodplain module to test if external/internally linked pages
 #               would be blocked by AdBlock Plus.
 #
 # Author:      Steve Micallef <steve@binarypool.com>

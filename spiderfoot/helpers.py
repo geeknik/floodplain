@@ -66,7 +66,7 @@ EmptyTree = typing.Dict[None, object]
 
 
 class SpiderFootHelpers():
-    """SpiderFoot helper functions.
+    """Floodplain helper functions.
 
     This class is used to store static helper functions which are
     designed to function independent of scan config or global config.
@@ -77,10 +77,10 @@ class SpiderFootHelpers():
 
     @staticmethod
     def dataPath() -> str:
-        """Returns the file system location of SpiderFoot data and configuration files.
+        """Returns the file system location of Floodplain data and configuration files.
 
         Returns:
-            str: SpiderFoot data file system path
+            str: Floodplain data file system path
         """
         path = os.environ.get('SPIDERFOOT_DATA')
         if not path:
@@ -94,7 +94,7 @@ class SpiderFootHelpers():
         """Returns the file system location of the cacha data files.
 
         Returns:
-            str: SpiderFoot cache file system path
+            str: Floodplain cache file system path
         """
         path = os.environ.get('SPIDERFOOT_CACHE')
         if not path:
@@ -105,10 +105,10 @@ class SpiderFootHelpers():
 
     @staticmethod
     def logPath() -> str:
-        """Returns the file system location of SpiderFoot log files.
+        """Returns the file system location of Floodplain log files.
 
         Returns:
-            str: SpiderFoot data file system path
+            str: Floodplain data file system path
         """
         path = os.environ.get('SPIDERFOOT_LOGS')
         if not path:
@@ -126,7 +126,7 @@ class SpiderFootHelpers():
             ignore_files (list): List of module file names to ignore
 
         Returns:
-            dict: SpiderFoot modules
+            dict: Floodplain modules
 
         Raises:
             TypeError: ignore file list was invalid

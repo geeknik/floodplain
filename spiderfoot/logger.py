@@ -66,7 +66,7 @@ class SpiderFootSqliteLogHandler(logging.Handler):
 
 
 def logListenerSetup(loggingQueue, opts: dict = None) -> 'logging.handlers.QueueListener':
-    """Create and start a SpiderFoot log listener in its own thread.
+    """Create and start a Floodplain log listener in its own thread.
 
     This function should be called as soon as possible in the main
     process, or whichever process is attached to stdin/stdout.
@@ -74,7 +74,7 @@ def logListenerSetup(loggingQueue, opts: dict = None) -> 'logging.handlers.Queue
     Args:
         loggingQueue (Queue): Queue (accepts both normal and multiprocessing queue types)
                               Must be instantiated in the main process.
-        opts (dict): SpiderFoot config
+        opts (dict): Floodplain config
 
     Returns:
         spiderFootLogListener (logging.handlers.QueueListener): Log listener
@@ -134,7 +134,7 @@ def logListenerSetup(loggingQueue, opts: dict = None) -> 'logging.handlers.Queue
 
 
 def logWorkerSetup(loggingQueue) -> 'logging.Logger':
-    """Root SpiderFoot logger.
+    """Root Floodplain logger.
 
     Args:
         loggingQueue (Queue): TBD

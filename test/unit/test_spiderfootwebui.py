@@ -481,7 +481,7 @@ class TestSpiderFootWebUi(unittest.TestCase):
         opts['__modules__'] = dict()
         sfwebui = SpiderFootWebUi(self.web_default_options, opts)
         start_scan = sfwebui.startscan('example scan name', 'example scan target', 'example module list', None, None)
-        self.assertIn('Invalid target type. Could not recognize it as a target SpiderFoot supports.', start_scan)
+        self.assertIn('Invalid target type. Could not recognize it as a target Floodplain supports.', start_scan)
 
     def test_start_scan_invalid_modules_should_return_error(self):
         """
@@ -780,7 +780,7 @@ class TestSpiderFootWebUi(unittest.TestCase):
         self.assertNotIn("\\", legacy_token)
 
         # a clean name is preserved verbatim in the legacy token.
-        self.assertIn('filename="MyScan-SpiderFoot.csv"', build('MyScan-SpiderFoot.csv'))
+        self.assertIn('filename="MyScan-Floodplain.csv"', build('MyScan-Floodplain.csv'))
 
         # empty / non-string input falls back to a safe default.
         self.assertIn('filename="export"', build(''))

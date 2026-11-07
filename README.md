@@ -91,7 +91,7 @@ To install and run Floodplain, you need at least Python 3.10 and a number of Pyt
 
 ### WRITING CORRELATION RULES
 
-There exists a comprehensive write-up and reference of the correlation rule-set introduced in SpiderFoot 4.0 [here](/correlations/README.md).
+There exists a comprehensive write-up and reference of the correlation rule-set (inherited from SpiderFoot 4.0) [here](/correlations/README.md).
 
 Also take a look at the [template.yaml](/correlations/template.yaml) file for a walk through. The existing [37 rules](/correlations) are also quite readable and good as starting points for additional rules.
 
@@ -174,24 +174,25 @@ File Metadata Extractor|Extracts meta data from documents and images.|Internal
 [FullHunt](https://fullhunt.io/)|Identify domain attack surface using FullHunt API.|Tiered API
 [Github](https://github.com/)|Identify associated public code repositories on Github.|Free API
 [GLEIF](https://search.gleif.org/)|Look up company information from Global Legal Entity Identifier Foundation (GLEIF).|Tiered API
+[Google](https://developers.google.com/custom-search)|Obtain information from the Google Custom Search API to identify sub-domains and links.|Tiered API
 [Google Maps](https://cloud.google.com/maps-platform/)|Identifies potential physical addresses and latitude/longitude coordinates.|Tiered API
 [Google Object Storage Finder](https://cloud.google.com/storage)|Search for potential Google Object Storage buckets associated with the target and attempt to list their contents.|Free API
 [Google SafeBrowsing](https://developers.google.com/safe-browsing/v4/lookup-api)|Check if the URL is included on any of the Safe Browsing lists.|Free API
-[Google](https://developers.google.com/custom-search)|Obtain information from the Google Custom Search API to identify sub-domains and links.|Tiered API
+[Google Tag Manager](https://tagmanager.google.com)|Search Google Tag Manager (GTM) for hosts sharing the same GTM code.|Free API
 [Gravatar](https://secure.gravatar.com/)|Retrieve user information from Gravatar API.|Free API
 [Grayhat Warfare](https://buckets.grayhatwarfare.com/)|Find bucket names matching the keyword extracted from a domain from Grayhat API.|Tiered API
 [Greensnow](https://greensnow.co/)|Check if a netblock or IP address is malicious according to greensnow.co.|Free API
 [grep.app](https://grep.app/)|Search grep.app API for links and emails related to the specified domain.|Free API
-[GreyNoise Community](https://greynoise.io/)|Obtain IP enrichment data from GreyNoise Community API|Tiered API
 [GreyNoise](https://greynoise.io/)|Obtain IP enrichment data from GreyNoise|Tiered API
+[GreyNoise Community](https://greynoise.io/)|Obtain IP enrichment data from GreyNoise Community API|Tiered API
 [HackerOne (Unofficial)](http://www.nobbd.de/)|Check external vulnerability scanning/reporting service h1.nobbd.de to see if the target is listed.|Free API
 [HackerTarget](https://hackertarget.com/)|Search HackerTarget.com for hosts sharing the same IP.|Free API
 Hash Extractor|Identify MD5 and SHA hashes in web content, files and more.|Internal
 [HaveIBeenPwned](https://haveibeenpwned.com/)|Check HaveIBeenPwned.com for hacked e-mail addresses identified in breaches.|Commercial API
-Hosting Provider Identifier|Find out if any IP addresses identified fall within known 3rd party hosting ranges, e.g. Amazon, Azure, etc.|Internal
 [Host.io](https://host.io)|Obtain information about domain names from host.io.|Tiered API
-Human Name Extractor|Attempt to identify human names in fetched content.|Internal
+Hosting Provider Identifier|Find out if any IP addresses identified fall within known 3rd party hosting ranges, e.g. Amazon, Azure, etc.|Internal
 [Hudson Rock](https://www.hudsonrock.com/)|Check domains and e-mail addresses against Hudson Rock's infostealer intelligence for credentials harvested by infostealer malware.|Tiered API
+Human Name Extractor|Attempt to identify human names in fetched content.|Internal
 [Hunter.io](https://hunter.io/)|Check for e-mail addresses and names on hunter.io.|Tiered API
 [Hybrid Analysis](https://www.hybrid-analysis.com)|Search Hybrid Analysis for domains and URLs related to the target.|Free API
 IBAN Number Extractor|Identify International Bank Account Numbers (IBANs) in any data.|Internal
@@ -209,8 +210,8 @@ Interesting File Finder|Identifies potential files of interest, e.g. office docu
 Junk File Finder|Looks for old/temporary and other similar files.|Internal
 [Keybase](https://keybase.io/)|Obtain additional information about domain names and identified usernames.|Free API
 [Koodous](https://koodous.com/apks/)|Search Koodous for mobile apps.|Tiered API
-[LeakIX](https://leakix.net/)|Search LeakIX for host data leaks, open ports, software and geoip.|Free API
 [Leak-Lookup](https://leak-lookup.com/)|Searches Leak-Lookup.com's database of breaches.|Free API
+[LeakIX](https://leakix.net/)|Search LeakIX for host data leaks, open ports, software and geoip.|Free API
 [Maltiverse](https://maltiverse.com)|Obtain information about any malicious activities involving IP addresses|Free API
 [MalwarePatrol](https://www.malwarepatrol.net/)|Searches malwarepatrol.net's database of malicious URLs/IPs.|Tiered API
 [MetaDefender](https://metadefender.opswat.com/)|Search MetaDefender API for IP address and domain IP reputation.|Tiered API
@@ -247,7 +248,7 @@ Port Scanner - TCP|Scans for commonly open TCP ports on Internet-facing systems.
 [SecurityTrails](https://securitytrails.com/)|Obtain Passive DNS and other information from SecurityTrails|Tiered API
 [Seon](https://seon.io/)|Queries seon.io to gather intelligence about IP Addresses, email addresses, and phone numbers|Commercial API
 [SHODAN](https://www.shodan.io/)|Obtain information from SHODAN about identified IP addresses.|Tiered API
-[Shodan InternetDB](https://internetdb.shodan.io/)|Obtain open ports, vulnerabilities, CPEs and hostnames for IP addresses from Shodan's free InternetDB. No API key required.|Free API
+[Shodan InternetDB](https://internetdb.shodan.io/)|Obtain open ports, vulnerabilities, CPEs and hostnames for IP addresses from Shodan's free InternetDB. No API key required.|Tiered API
 Similar Domain Finder|Search various sources to identify similar looking domain names, for instance squatted domains.|Internal
 [Skymem](http://www.skymem.info/)|Look up e-mail addresses on Skymem.|Free API
 [SlideShare](https://www.slideshare.net)|Gather name and location from SlideShare profiles.|Free API
@@ -268,19 +269,19 @@ Subdomain Takeover Checker|Check if affiliated subdomains are vulnerable to take
 [TextMagic](https://www.textmagic.com/)|Obtain phone number type from TextMagic API|Tiered API
 [ThreatFox](https://threatfox.abuse.ch)|Check if an IP address is malicious according to ThreatFox.|Free API
 TLD Searcher|Search all Internet TLDs for domains with the same name as the target (this can be very slow.)|Internal
-[Tool - CMSeeK]([https://github.com/Tuhinshubhra/CMSeeK](https://github.com/Tuhinshubhra/CMSeeK))|Identify what Content Management System (CMS) might be used.|Tool
-[Tool - DNSTwist]([https://github.com/elceef/dnstwist](https://github.com/elceef/dnstwist))|Identify bit-squatting, typo and other similar domains to the target using a local DNSTwist installation.|Tool
-[Tool - nbtscan]([http://www.unixwiz.net/tools/nbtscan.html](http://www.unixwiz.net/tools/nbtscan.html))|Scans for open NETBIOS nameservers on your target's network.|Tool
-[Tool - Nmap]([https://nmap.org/](https://nmap.org/))|Identify what Operating System might be used.|Tool
-[Tool - Nuclei]([https://nuclei.projectdiscovery.io/](https://nuclei.projectdiscovery.io/))|Fast and customisable vulnerability scanner.|Tool
-[Tool - onesixtyone]([https://github.com/trailofbits/onesixtyone](https://github.com/trailofbits/onesixtyone))|Fast scanner to find publicly exposed SNMP services.|Tool
-[Tool - Retire.js]([http://retirejs.github.io/retire.js/](http://retirejs.github.io/retire.js/))|Scanner detecting the use of JavaScript libraries with known vulnerabilities|Tool
-[Tool - snallygaster]([https://github.com/hannob/snallygaster](https://github.com/hannob/snallygaster))|Finds file leaks and other security problems on HTTP servers.|Tool
-[Tool - testssl.sh]([https://testssl.sh](https://testssl.sh))|Identify various TLS/SSL weaknesses, including Heartbleed, CRIME and ROBOT.|Tool
-[Tool - TruffleHog]([https://github.com/trufflesecurity/truffleHog](https://github.com/trufflesecurity/truffleHog))|Searches through git repositories for high entropy strings and secrets, digging deep into commit history.|Tool
-[Tool - WAFW00F]([https://github.com/EnableSecurity/wafw00f](https://github.com/EnableSecurity/wafw00f))|Identify what web application firewall (WAF) is in use on the specified website.|Tool
-[Tool - Wappalyzer]([https://www.wappalyzer.com/](https://www.wappalyzer.com/))|Wappalyzer indentifies technologies on websites.|Tool
-[Tool - WhatWeb]([https://github.com/urbanadventurer/whatweb](https://github.com/urbanadventurer/whatweb))|Identify what software is in use on the specified website.|Tool
+[Tool - CMSeeK](https://github.com/Tuhinshubhra/CMSeeK)|Identify what Content Management System (CMS) might be used.|Tool
+[Tool - DNSTwist](https://github.com/elceef/dnstwist)|Identify bit-squatting, typo and other similar domains to the target using a local DNSTwist installation.|Tool
+[Tool - nbtscan](http://www.unixwiz.net/tools/nbtscan.html)|Scans for open NETBIOS nameservers on your target's network.|Tool
+[Tool - Nmap](https://nmap.org/)|Identify what Operating System might be used.|Tool
+[Tool - Nuclei](https://nuclei.projectdiscovery.io/)|Fast and customisable vulnerability scanner.|Tool
+[Tool - onesixtyone](https://github.com/trailofbits/onesixtyone)|Fast scanner to find publicly exposed SNMP services.|Tool
+[Tool - Retire.js](http://retirejs.github.io/retire.js/)|Scanner detecting the use of JavaScript libraries with known vulnerabilities|Tool
+[Tool - snallygaster](https://github.com/hannob/snallygaster)|Finds file leaks and other security problems on HTTP servers.|Tool
+[Tool - testssl.sh](https://testssl.sh)|Identify various TLS/SSL weaknesses, including Heartbleed, CRIME and ROBOT.|Tool
+[Tool - TruffleHog](https://github.com/trufflesecurity/truffleHog)|Searches through git repositories for high entropy strings and secrets, digging deep into commit history.|Tool
+[Tool - WAFW00F](https://github.com/EnableSecurity/wafw00f)|Identify what web application firewall (WAF) is in use on the specified website.|Tool
+[Tool - Wappalyzer](https://www.wappalyzer.com/)|Wappalyzer indentifies technologies on websites.|Tool
+[Tool - WhatWeb](https://github.com/urbanadventurer/whatweb)|Identify what software is in use on the specified website.|Tool
 [TOR Exit Nodes](https://metrics.torproject.org/)|Check if an IP adddress or netblock appears on the Tor Metrics exit node list.|Free API
 [TORCH](https://torchsearch.wordpress.com/)|Search Tor 'TORCH' search engine for mentions of the target domain.|Free API
 [Twilio](https://www.twilio.com/)|Obtain information from Twilio about phone numbers. Ensure you have the Caller Name add-on installed in Twilio.|Tiered API
@@ -296,8 +297,8 @@ Web Framework Identifier|Identify the usage of popular web frameworks like jQuer
 Web Server Identifier|Obtain web server banners to identify versions of web servers being used.|Internal
 Web Spider|Spidering of web-pages to extract content for searching.|Internal
 [WhatCMS](https://whatcms.org/)|Check web technology using WhatCMS.org API.|Tiered API
-[Whoisology](https://whoisology.com/)|Reverse Whois lookups using Whoisology.com.|Commercial API
 Whois|Perform a WHOIS look-up on domain names and owned netblocks.|Internal
+[Whoisology](https://whoisology.com/)|Reverse Whois lookups using Whoisology.com.|Commercial API
 [Whoxy](https://www.whoxy.com/)|Reverse Whois lookups using Whoxy.com.|Commercial API
 [WiGLE](https://wigle.net/)|Query WiGLE to identify nearby WiFi access points.|Free API
 [Wikileaks](https://wikileaks.org/)|Search Wikileaks for mentions of domain names and e-mail addresses.|Free API

@@ -1,7 +1,7 @@
 #
-# Spiderfoot Dockerfile
+# Floodplain Dockerfile
 #
-# http://www.spiderfoot.net
+# https://github.com/geeknik/floodplain
 #
 # Written by: Michael Pellon <m@pellon.io>
 # Updated by: Chandrapal <bnchandrapal@protonmail.com>
@@ -11,28 +11,28 @@
 #
 # Usage:
 #
-#   sudo docker build -t spiderfoot .
-#   sudo docker run -p 5001:5001 --security-opt no-new-privileges spiderfoot
+#   sudo docker build -t floodplain .
+#   sudo docker run -p 5001:5001 --security-opt no-new-privileges floodplain
 #
-# Using Docker volume for spiderfoot data
+# Using Docker volume for floodplain data
 #
-#   sudo docker run -p 5001:5001 -v /mydir/spiderfoot:/var/lib/spiderfoot spiderfoot
+#   sudo docker run -p 5001:5001 -v /mydir/floodplain:/var/lib/floodplain floodplain
 #
-# Using SpiderFoot remote command line with web server
+# Using Floodplain remote command line with web server
 #
-#   docker run --rm -it spiderfoot sfcli.py -s http://my.spiderfoot.host:5001/
+#   docker run --rm -it floodplain sfcli.py -s http://my.floodplain.host:5001/
 #
-# Running spiderfoot commands without web server (can optionally specify volume)
+# Running floodplain commands without web server (can optionally specify volume)
 #
-#   sudo docker run --rm spiderfoot sf.py -h
+#   sudo docker run --rm floodplain sf.py -h
 #
 # Running a shell in the container for maintenance
-#   sudo docker run -it --entrypoint /bin/sh spiderfoot
+#   sudo docker run -it --entrypoint /bin/sh floodplain
 #
-# Running spiderfoot unit tests in container
+# Running floodplain unit tests in container
 #
-#   sudo docker build -t spiderfoot-test --build-arg REQUIREMENTS=test/requirements.txt .
-#   sudo docker run --rm spiderfoot-test -m pytest --flake8 .
+#   sudo docker build -t floodplain-test --build-arg REQUIREMENTS=test/requirements.txt .
+#   sudo docker run --rm floodplain-test -m pytest --flake8 .
 
 FROM alpine:3.12.4 AS build
 ARG REQUIREMENTS=requirements.txt
@@ -50,33 +50,33 @@ RUN pip3 install -r "$REQUIREMENTS"
 
 
 FROM alpine:3.13.0
-WORKDIR /home/spiderfoot
+WORKDIR /home/floodplain
 
 # Place database and logs outside installation directory
-ENV SPIDERFOOT_DATA /var/lib/spiderfoot
-ENV SPIDERFOOT_LOGS /var/lib/spiderfoot/log
-ENV SPIDERFOOT_CACHE /var/lib/spiderfoot/cache
+ENV SPIDERFOOT_DATA /var/lib/floodplain
+ENV SPIDERFOOT_LOGS /var/lib/floodplain/log
+ENV SPIDERFOOT_CACHE /var/lib/floodplain/cache
 
 # Run everything as one command so that only one layer is created
 RUN apk --update --no-cache add python3 musl openssl libxslt tinyxml libxml2 jpeg zlib openjpeg \
-    && addgroup spiderfoot \
-    && adduser -G spiderfoot -h /home/spiderfoot -s /sbin/nologin \
-               -g "SpiderFoot User" -D spiderfoot \
+    && addgroup floodplain \
+    && adduser -G floodplain -h /home/floodplain -s /sbin/nologin \
+               -g "Floodplain User" -D floodplain \
     && rm -rf /var/cache/apk/* \
     && rm -rf /lib/apk/db \
     && rm -rf /root/.cache \
     && mkdir -p $SPIDERFOOT_DATA || true \
     && mkdir -p $SPIDERFOOT_LOGS || true \
     && mkdir -p $SPIDERFOOT_CACHE || true \
-    && chown spiderfoot:spiderfoot $SPIDERFOOT_DATA \
-    && chown spiderfoot:spiderfoot $SPIDERFOOT_LOGS \
-    && chown spiderfoot:spiderfoot $SPIDERFOOT_CACHE
+    && chown floodplain:floodplain $SPIDERFOOT_DATA \
+    && chown floodplain:floodplain $SPIDERFOOT_LOGS \
+    && chown floodplain:floodplain $SPIDERFOOT_CACHE
 
 COPY . .
 COPY --from=build /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-USER spiderfoot
+USER floodplain
 
 EXPOSE 5001
 

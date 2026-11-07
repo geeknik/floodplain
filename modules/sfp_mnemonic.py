@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_mnemonic
-# Purpose:     SpiderFoot plug-in for retrieving passive DNS information
+# Purpose:     Floodplain module for retrieving passive DNS information
 #              from Mnemonic PassiveDNS API.
 #
 # Author:      <bcoles@gmail.com>

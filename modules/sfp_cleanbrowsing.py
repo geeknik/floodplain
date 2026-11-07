@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_cleanbrowsing
-# Purpose:     SpiderFoot plug-in for looking up whether hosts are blocked by
+# Purpose:     Floodplain module for looking up whether hosts are blocked by
 #              CleanBrowsing.org DNS content family filters
 #              (185.228.168.168 and 185.228.168.169).
 #

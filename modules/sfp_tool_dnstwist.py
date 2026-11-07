@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_tool_dnstwist
-# Purpose:      SpiderFoot plug-in for using the 'dnstwist' tool.
+# Purpose:      Floodplain module for using the 'dnstwist' tool.
 #               Tool: https://github.com/elceef/dnstwist
 #
 # Author:      Steve Micallef <steve@binarypool.com>

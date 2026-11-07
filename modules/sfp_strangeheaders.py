@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_strangeheaders
-# Purpose:      SpiderFoot plug-in for identifying non-standard HTTP headers
+# Purpose:      Floodplain module for identifying non-standard HTTP headers
 #               in web server responses.
 #
 # Author:      Steve Micallef <steve@binarypool.com>

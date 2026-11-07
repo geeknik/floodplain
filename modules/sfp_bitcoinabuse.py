@@ -83,7 +83,7 @@ class sfp_bitcoinabuse(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://www.bitcoinabuse.com/api/reports/check?{urllib.parse.urlencode(params)}",
             timeout=self.opts["_fetchtimeout"],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
         )
 
         # All endpoints other than Report Address have a rate limit of

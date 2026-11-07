@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_textmagic
-# Purpose:      Spiderfoot module to retrieve phone number type
+# Purpose:      Floodplain module to retrieve phone number type
 #               using TextMagic API
 #
 # Author:      Krishnasis Mandal <krishnasis@hotmail.com>
@@ -98,7 +98,7 @@ class sfp_textmagic(SpiderFootPlugin):
             f"https://rest.textmagic.com/api/v2/lookups/{qry}",
             headers=headers,
             timeout=self.opts["_fetchtimeout"],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
         )
 
         if res["code"] != "200":

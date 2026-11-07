@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_dnszonexfer
-# Purpose:      SpiderFoot plug-in for attempting a DNS zone transfer.
+# Purpose:      Floodplain module for attempting a DNS zone transfer.
 #
 # Author:      Steve Micallef <steve@binarypool.com>
 #

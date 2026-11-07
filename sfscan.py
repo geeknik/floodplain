@@ -373,7 +373,7 @@ class SpiderFootScanner():
 
             # Create a pseudo module for the root event to originate from
             psMod = SpiderFootPlugin()
-            psMod.__name__ = "SpiderFoot UI"
+            psMod.__name__ = "Floodplain UI"
             psMod.setTarget(self.__target)
             psMod.setDbh(self.__dbh)
             psMod.clearListeners()
@@ -384,12 +384,12 @@ class SpiderFootScanner():
             rootEvent = SpiderFootEvent("ROOT", self.__targetValue, "", None)
             psMod.notifyListeners(rootEvent)
             firstEvent = SpiderFootEvent(self.__targetType, self.__targetValue,
-                                         "SpiderFoot UI", rootEvent)
+                                         "Floodplain UI", rootEvent)
             psMod.notifyListeners(firstEvent)
 
             # Special case.. check if an INTERNET_NAME is also a domain
             if self.__targetType == 'INTERNET_NAME' and self.__sf.isDomain(self.__targetValue, self.__config['_internettlds']):
-                firstEvent = SpiderFootEvent('DOMAIN_NAME', self.__targetValue, "SpiderFoot UI", rootEvent)
+                firstEvent = SpiderFootEvent('DOMAIN_NAME', self.__targetValue, "Floodplain UI", rootEvent)
                 psMod.notifyListeners(firstEvent)
 
             # If in interactive mode, loop through this shared global variable

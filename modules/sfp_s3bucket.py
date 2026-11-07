@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_s3bucket
-# Purpose:      SpiderFoot plug-in for identifying potential S3 buckets related to
+# Purpose:      Floodplain module for identifying potential S3 buckets related to
 #               the target.
 #
 # Author:      Steve Micallef <steve@binarypool.com>
@@ -72,7 +72,7 @@ class sfp_s3bucket(SpiderFootPlugin):
         return ["CLOUD_STORAGE_BUCKET", "CLOUD_STORAGE_BUCKET_OPEN"]
 
     def checkSite(self, url):
-        res = self.sf.fetchUrl(url, timeout=10, useragent="SpiderFoot", noLog=True)
+        res = self.sf.fetchUrl(url, timeout=10, useragent=self.opts.get('_useragent', "Floodplain"), noLog=True)
 
         if not res['content']:
             return

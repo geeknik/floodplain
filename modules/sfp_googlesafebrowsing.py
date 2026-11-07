@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_googlesafebrowsing
-# Purpose:      SpiderFoot plug-in to check if the URL is included on any of the
+# Purpose:      Floodplain module to check if the URL is included on any of the
 #               Google Safe Browsing lists
 #
 # Author:      Filip Aleksić <faleksicdev@gmail.com>
@@ -97,7 +97,7 @@ class sfp_googlesafebrowsing(SpiderFootPlugin):
             f":find?key={self.opts['api_key']}"
         )
         payload = {
-            "client": {"clientId": "SpiderFoot", "clientVersion": "3.2"},
+            "client": {"clientId": "Floodplain", "clientVersion": "3.2"},
             "threatInfo": {
                 "threatTypes": [
                     "THREAT_TYPE_UNSPECIFIED",

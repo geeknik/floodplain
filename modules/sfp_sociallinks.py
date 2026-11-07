@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_sociallinks
-# Purpose:     Spiderfoot plugin to query SocialLinks.io to gather intelligence
+# Purpose:     Floodplain module to query SocialLinks.io to gather intelligence
 #              from social media platforms and dark web.
 #
 # Author:      Krishnasis Mandal <krishnasis@hotmail.com>

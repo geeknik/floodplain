@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_pgp
-# Purpose:      SpiderFoot plug-in for looking up e-mail addresses in PGP
+# Purpose:      Floodplain module for looking up e-mail addresses in PGP
 #               key servers as well as finding e-mail addresses belonging to
 #               your target.
 #

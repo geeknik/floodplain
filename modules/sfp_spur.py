@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_spur
-# Purpose:      Spiderfoot plugin to search spur.us API for any
+# Purpose:      Floodplain module to search spur.us API for any
 #               malicious activity by the target
 #
 # Author:      Krishnasis Mandal <krishnasis@hotmail.com>

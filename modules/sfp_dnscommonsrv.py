@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------
 # Name:         sfp_dnscommonsrv
-# Purpose:      SpiderFoot plug-in for attempting to resolve through
+# Purpose:      Floodplain module for attempting to resolve through
 #               brute-forcing common DNS SRV records.
 #
 # Author:      Michael Scherer <misc@zarb.org>

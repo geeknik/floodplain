@@ -98,7 +98,7 @@ class sfp_hostio(SpiderFootPlugin):
             f"https://host.io/api/full/{qry}",
             headers={"Authorization": f"Bearer {self.opts['api_key']}"},
             timeout=self.opts["_fetchtimeout"],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
         )
         if res["code"] != "200":
             self.handle_error_response(qry, res)

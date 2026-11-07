@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_googleobjectstorage
-# Purpose:      SpiderFoot plug-in for identifying potential Google Object Storage
+# Purpose:      Floodplain module for identifying potential Google Object Storage
 #               buckets related to the target.
 #
 # Author:      Steve Micallef <steve@binarypool.com>
@@ -73,7 +73,7 @@ class sfp_googleobjectstorage(SpiderFootPlugin):
         return ["CLOUD_STORAGE_BUCKET", "CLOUD_STORAGE_BUCKET_OPEN"]
 
     def checkSite(self, url):
-        res = self.sf.fetchUrl(url, timeout=10, useragent="SpiderFoot", noLog=True)
+        res = self.sf.fetchUrl(url, timeout=10, useragent=self.opts.get('_useragent', "Floodplain"), noLog=True)
 
         if not res['content']:
             return

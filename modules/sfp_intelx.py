@@ -111,7 +111,7 @@ class sfp_intelx(SpiderFootPlugin):
         retdata = list()
 
         headers = {
-            "User-Agent": "SpiderFoot",
+            "User-Agent": self.opts.get('_useragent', "Floodplain"),
             "x-key": self.opts['api_key'],
         }
 

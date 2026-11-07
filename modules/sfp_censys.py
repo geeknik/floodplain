@@ -119,7 +119,7 @@ class sfp_censys(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://search.censys.io/api/v2/hosts/{qry}",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
             headers=headers
         )
 
@@ -143,7 +143,7 @@ class sfp_censys(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://search.censys.io/api/v2/hosts/search/?{params}",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
             headers=headers
         )
 

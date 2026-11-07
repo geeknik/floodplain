@@ -188,7 +188,7 @@ class sfp_alienvault(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://otx.alienvault.com/api/v1/indicators/{target_type}/{qry}/reputation",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
             headers=headers)
 
         return self.parseApiResponse(res)
@@ -210,7 +210,7 @@ class sfp_alienvault(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://otx.alienvault.com/api/v1/indicators/{target_type}/{qry}/passive_dns",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
             headers=headers)
 
         return self.parseApiResponse(res)
@@ -228,7 +228,7 @@ class sfp_alienvault(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://otx.alienvault.com/api/v1/indicators/domain/{qry}/url_list?{params}",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
             headers=headers)
 
         return self.parseApiResponse(res)
@@ -246,7 +246,7 @@ class sfp_alienvault(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://otx.alienvault.com/api/v1/indicators/hostname/{qry}/url_list?{params}",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
             headers=headers)
 
         return self.parseApiResponse(res)

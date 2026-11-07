@@ -91,7 +91,7 @@ class sfp_iknowwhatyoudownload(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://api.antitor.com/history/peer/?{params}",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot"
+            useragent=self.opts.get('_useragent', "Floodplain")
         )
 
         if res['code'] != "200":

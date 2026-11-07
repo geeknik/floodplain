@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_spider
-# Purpose:      SpiderFoot plug-in for spidering sites and returning meta data
+# Purpose:      Floodplain module for spidering sites and returning meta data
 #               for other plug-ins to consume.
 #
 # Author:      Steve Micallef <steve@binarypool.com>

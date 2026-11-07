@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_dnsdb
-# Purpose:     SpiderFoot plug-in that resolves and gets history of domains and IPs
+# Purpose:     Floodplain module that resolves and gets history of domains and IPs
 #
 # Author:      Filip Aleksić <faleksicdev@gmail.com>
 #
@@ -106,7 +106,7 @@ class sfp_dnsdb(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://api.dnsdb.info/dnsdb/v2/lookup/{endpoint}/{queryType}/{query}",
             timeout=30,
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
             headers=headers,
         )
 

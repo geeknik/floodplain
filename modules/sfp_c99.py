@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_c99
-# Purpose:      SpiderFoot plug-in that queries c99 API
+# Purpose:      Floodplain module that queries c99 API
 #
 # Author:      Filip Aleksić <faleksicdev@gmail.com>
 #
@@ -99,7 +99,7 @@ class sfp_c99(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://api.c99.nl/{path}?key={self.opts['api_key']}&{queryParam}={queryData}&json",
             timeout=self.opts["_fetchtimeout"],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
         )
 
         if res["code"] == "429":

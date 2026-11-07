@@ -82,7 +82,7 @@ class sfp_wikipediaedits(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://en.wikipedia.org/w/api.php?{urllib.parse.urlencode(params)}",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot"
+            useragent=self.opts.get('_useragent', "Floodplain")
         )
 
         if res['code'] in ["404", "403", "500"]:

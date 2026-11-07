@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_cloudflaredns
-# Purpose:      SpiderFoot plug-in for looking up whether hosts are blocked by
+# Purpose:      Floodplain module for looking up whether hosts are blocked by
 #               CloudFlare family and malware filtering DNS servers.
 #
 # Author:      Steve Micallef <steve@binarypool.com>

@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------
 // Name:         spiderfoot.js
-// Purpose:      All the javascript code for the spiderfoot aspects of the UI.
+// Purpose:      All the javascript code for the Floodplain UI.
 //
 // Author:      Steve Micallef <steve@binarypool.com>
 //

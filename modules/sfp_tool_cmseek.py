@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_tool_cmseek
-# Purpose:      SpiderFoot plug-in for using the 'CMSeeK' tool.
+# Purpose:      Floodplain module for using the 'CMSeeK' tool.
 #               Tool: https://github.com/Tuhinshubhra/CMSeeK
 #
 # Author:      Steve Micallef <steve@binarypool.com>

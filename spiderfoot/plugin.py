@@ -109,7 +109,7 @@ class SpiderFootPlugin():
     __sfdb__ = None
     # ID of the scan the module is running against
     __scanId__ = None
-    # (only used in SpiderFoot HX) tracking of data sources
+    # (only used in Floodplain HX) tracking of data sources
     __dataSource__ = None
     # If set, events not matching this list are dropped
     __outputFilter__ = None
@@ -125,7 +125,7 @@ class SpiderFootPlugin():
     incomingEventQueue = None
     # Queue for produced events
     outgoingEventQueue = None
-    # SpiderFoot object, set in each module's setup() function
+    # Floodplain object, set in each module's setup() function
     sf = None
     # Configuration, set in each module's setup() function
     opts = dict()
@@ -168,7 +168,7 @@ class SpiderFootPlugin():
         """Will always be overriden by the implementer.
 
         Args:
-            sf (SpiderFoot): SpiderFoot object
+            sf (Floodplain): Floodplain object
             userOpts (dict): TBD
         """
         pass
@@ -302,7 +302,7 @@ class SpiderFootPlugin():
             Move all module state to use this, which then would enable a scan to be paused/resumed.
 
         Note:
-            Required for SpiderFoot HX compatibility of modules.
+            Required for Floodplain HX compatibility of modules.
 
         Returns:
             dict: module temporary state data

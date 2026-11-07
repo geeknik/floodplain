@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_nameapi
-# Purpose:      Spiderfoot plugin to check if an email is
+# Purpose:      Floodplain module to check if an email is
 #               disposable using nameapi.org API.
 #
 # Author:      Krishnasis Mandal <krishnasis@hotmail.com>
@@ -78,7 +78,7 @@ class sfp_nameapi(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"http://api.nameapi.org/rest/v5.3/email/disposableemailaddressdetector?apiKey={self.opts['api_key']}&emailAddress={qry}",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot"
+            useragent=self.opts.get('_useragent', "Floodplain")
         )
 
         if res['content'] is None:

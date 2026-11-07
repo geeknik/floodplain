@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_phishstats
-# Purpose:     Spiderfoot plugin to search PhishStats API
+# Purpose:     Floodplain module to search PhishStats API
 #              to determine if an IP is malicious.
 #
 # Author:      Krishnasis Mandal <krishnasis@hotmail.com>

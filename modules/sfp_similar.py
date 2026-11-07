@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_similar
-# Purpose:      SpiderFoot plug-in for identifying domains that look similar
+# Purpose:      Floodplain module for identifying domains that look similar
 #               to the one being queried.
 #
 # Author:      Steve Micallef <steve@binarypool.com>

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfcli
-# Purpose:     Command Line Interface for SpiderFoot.
+# Purpose:     Command Line Interface for Floodplain.
 #
 # Author:      Steve Micallef <steve@binarypool.com>
 #
@@ -360,7 +360,7 @@ class SpiderFootCli(cmd.Cmd):
         # requests_log.setLevel(logging.DEBUG)
         # requests_log.propagate = True
         headers = {
-            "User-agent": "SpiderFoot-CLI/" + self.version,
+            "User-agent": "Floodplain-CLI/" + self.version,
             "Accept": "application/json"
         }
 
@@ -570,7 +570,7 @@ class SpiderFootCli(cmd.Cmd):
         if s[1] != self.version:
             self.edprint(f"Server and CLI version are not the same ({s[1]} / {self.version}). This could lead to unpredictable results!")
 
-    # List all SpiderFoot modules.
+    # List all Floodplain modules.
     def do_modules(self, line, cacheonly=False):
         """modules
         List all available modules and their descriptions."""
@@ -587,7 +587,7 @@ class SpiderFootCli(cmd.Cmd):
         self.send_output(d, line, titles={"name": "Module name",
                                           "descr": "Description"})
 
-    # List all SpiderFoot correlation rules
+    # List all Floodplain correlation rules
     def do_correlationrules(self, line, cacheonly=False):
         """correlations
         List all available correlation rules and their descriptions."""
@@ -605,7 +605,7 @@ class SpiderFootCli(cmd.Cmd):
                                           "name": "Name",
                                           "risk": "Risk"})
 
-    # List all SpiderFoot data element types.
+    # List all Floodplain data element types.
     def do_types(self, line, cacheonly=False):
         """types
         List all available element types and their descriptions."""
@@ -1175,7 +1175,7 @@ class SpiderFootCli(cmd.Cmd):
     # Get/Set configuration
     def do_set(self, line):
         """set [opt [= <val>]]
-        Set a configuration variable in SpiderFoot."""
+        Set a configuration variable in Floodplain."""
 
         c = self.myparseline(line, replace=False)
         cfg = None

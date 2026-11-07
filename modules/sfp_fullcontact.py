@@ -95,7 +95,7 @@ class sfp_fullcontact(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             url,
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
             postData=json.dumps(data),
             headers=headers
         )

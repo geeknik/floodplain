@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_tool_testsslsh
-# Purpose:     SpiderFoot plug-in for using the testssl.sh tool.
+# Purpose:     Floodplain module for using the testssl.sh tool.
 #              Tool: https://github.com/drwetter/testssl.sh
 #
 # Author:      <steve@binarypool.com>

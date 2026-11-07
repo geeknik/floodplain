@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_tool_nbtscan
-# Purpose:     SpiderFoot plug-in for using the nbtscan tool.
+# Purpose:     Floodplain module for using the nbtscan tool.
 #              Tool: http://www.unixwiz.net/tools/nbtscan.html
 #
 # Author:      <steve@binarypool.com>

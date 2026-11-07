@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_maltiverse
-# Purpose:      Spiderfoot plugin to search Maltiverse API
+# Purpose:      Floodplain module to search Maltiverse API
 #               for any malicious activity by the target
 #
 # Author:      Krishnasis Mandal <krishnasis@hotmail.com>

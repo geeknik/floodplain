@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_stor_stdout
-# Purpose:      SpiderFoot plug-in for dumping events to standard output.
+# Purpose:      Floodplain module for dumping events to standard output.
 #
 # Author:      Steve Micallef <steve@binarypool.com>
 #
@@ -19,7 +19,7 @@ class sfp__stor_stdout(SpiderFootPlugin):
 
     meta = {
         'name': "Command-line output",
-        'summary': "Dumps output to standard out. Used for when a SpiderFoot scan is run via the command-line."
+        'summary': "Dumps output to standard out. Used for when a Floodplain scan is run via the command-line."
     }
 
     _priority = 0

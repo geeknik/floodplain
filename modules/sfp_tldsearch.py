@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_tldsearch
-# Purpose:      SpiderFoot plug-in for identifying the existence of this target
+# Purpose:      Floodplain module for identifying the existence of this target
 #               on other TLDs.
 #
 # Author:      Steve Micallef <steve@binarypool.com>

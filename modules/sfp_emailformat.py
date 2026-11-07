@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_emailformat
-# Purpose:      SpiderFoot plug-in for retrieving e-mail addresses
+# Purpose:      Floodplain module for retrieving e-mail addresses
 #               belonging to your target from email-format.com.
 #
 # Author:      <bcoles@gmail.com>

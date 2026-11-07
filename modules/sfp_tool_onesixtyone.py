@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_tool_onesixtyone
-# Purpose:     SpiderFoot plug-in for using the onesixtyone tool.
+# Purpose:     Floodplain module for using the onesixtyone tool.
 #              Tool: https://github.com/trailofbits/onesixtyone
 #
 # Author:      <steve@binarypool.com>

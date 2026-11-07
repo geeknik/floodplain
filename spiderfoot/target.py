@@ -11,7 +11,7 @@ else:
 
 
 class SpiderFootTarget():
-    """SpiderFoot target.
+    """Floodplain target.
 
     Attributes:
         validTypes (typing.List[str]): valid event types accepted as a target
@@ -28,7 +28,7 @@ class SpiderFootTarget():
     _targetAliases: typing.List[TargetAlias]
 
     def __init__(self, targetValue: str, typeName: str) -> None:
-        """Initialize SpiderFoot target.
+        """Initialize Floodplain target.
 
         Args:
             targetValue (str): target value

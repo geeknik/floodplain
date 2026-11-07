@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_tool_whatweb
-# Purpose:     SpiderFoot plug-in for using the 'WhatWeb' tool.
+# Purpose:     Floodplain module for using the 'WhatWeb' tool.
 #              Tool: https://github.com/urbanadventurer/whatweb
 #
 # Author:      <bcoles@gmail.com>

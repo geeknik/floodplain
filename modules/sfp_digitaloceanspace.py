@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_digitaloceanspace
-# Purpose:      SpiderFoot plug-in for identifying potential Digital Ocean spaces
+# Purpose:      Floodplain module for identifying potential Digital Ocean spaces
 #               related to the target.
 #
 # Author:      Steve Micallef <steve@binarypool.com>
@@ -74,7 +74,7 @@ class sfp_digitaloceanspace(SpiderFootPlugin):
         return ["CLOUD_STORAGE_BUCKET", "CLOUD_STORAGE_BUCKET_OPEN"]
 
     def checkSite(self, url):
-        res = self.sf.fetchUrl(url, timeout=10, useragent="SpiderFoot", noLog=True)
+        res = self.sf.fetchUrl(url, timeout=10, useragent=self.opts.get('_useragent', "Floodplain"), noLog=True)
 
         if not res['content']:
             return

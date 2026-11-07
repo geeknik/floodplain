@@ -76,7 +76,7 @@ class sfp_bitcoinwhoswho(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://bitcoinwhoswho.com/api/scam/{self.opts['api_key']}?{qs}",
             timeout=self.opts["_fetchtimeout"],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
         )
 
         if res["content"] is None:

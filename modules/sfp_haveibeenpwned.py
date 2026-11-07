@@ -94,7 +94,7 @@ class sfp_haveibeenpwned(SpiderFootPlugin):
             # https://haveibeenpwned.com/API/v2#RateLimiting
             time.sleep(1.5)
             res = self.sf.fetchUrl(url, timeout=self.opts['_fetchtimeout'],
-                                   useragent="SpiderFoot", headers=hdrs)
+                                   useragent=self.opts.get('_useragent', "Floodplain"), headers=hdrs)
 
             if res['code'] == "200":
                 break
@@ -132,7 +132,7 @@ class sfp_haveibeenpwned(SpiderFootPlugin):
             # https://haveibeenpwned.com/API/v2#RateLimiting
             time.sleep(1.5)
             res = self.sf.fetchUrl(url, timeout=self.opts['_fetchtimeout'],
-                                   useragent="SpiderFoot", headers=headers)
+                                   useragent=self.opts.get('_useragent', "Floodplain"), headers=headers)
 
             if res['code'] == "200":
                 break

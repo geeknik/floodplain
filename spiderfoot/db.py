@@ -20,7 +20,7 @@ import time
 
 
 class SpiderFootDb:
-    """SpiderFoot database
+    """Floodplain database
 
     Attributes:
         conn: SQLite connect() connection
@@ -34,7 +34,7 @@ class SpiderFootDb:
     # Prevent multithread access to sqlite database
     dbhLock = threading.RLock()
 
-    # Queries for creating the SpiderFoot database
+    # Queries for creating the Floodplain database
     createSchemaQueries = [
         "PRAGMA journal_mode=WAL",
         "CREATE TABLE tbl_event_types ( \
@@ -119,7 +119,7 @@ class SpiderFootDb:
     ]
 
     eventDetails = [
-        ['ROOT', 'Internal SpiderFoot Root event', 1, 'INTERNAL'],
+        ['ROOT', 'Internal Floodplain Root event', 1, 'INTERNAL'],
         ['ACCOUNT_EXTERNAL_OWNED', 'Account on External Site', 0, 'ENTITY'],
         ['ACCOUNT_EXTERNAL_OWNED_COMPROMISED', 'Hacked Account on External Site', 0, 'DESCRIPTOR'],
         ['ACCOUNT_EXTERNAL_USER_SHARED_COMPROMISED', 'Hacked User Account on External Site', 0, 'DESCRIPTOR'],
@@ -367,7 +367,7 @@ class SpiderFootDb:
                 try:
                     self.create()
                 except Exception as e:
-                    raise IOError("Tried to set up the SpiderFoot database schema, but failed") from e
+                    raise IOError("Tried to set up the Floodplain database schema, but failed") from e
 
             # For users with pre 4.0 databases, add the correlation
             # tables + indexes if they don't exist.
@@ -381,8 +381,8 @@ class SpiderFootDb:
                         self.conn.commit()
                 except sqlite3.Error:
                     raise IOError("Looks like you are running a pre-4.0 database. Unfortunately "
-                                  "SpiderFoot wasn't able to migrate you, so you'll need to delete "
-                                  "your SpiderFoot database in order to proceed.") from None
+                                  "Floodplain wasn't able to migrate you, so you'll need to delete "
+                                  "your Floodplain database in order to proceed.") from None
 
             # Add the LLM triage table for 4.0 databases created before it
             # existed (the pre-4.0 block above is skipped once correlation
@@ -597,7 +597,7 @@ class SpiderFootDb:
                 raise TypeError(f"message is {type(message)}; expected str()") from None
 
             if not component:
-                component = "SpiderFoot"
+                component = "Floodplain"
 
             inserts.append((instanceId, logTime * 1000, component, classification, message))
 
@@ -643,7 +643,7 @@ class SpiderFootDb:
             raise TypeError(f"message is {type(message)}; expected str()") from None
 
         if not component:
-            component = "SpiderFoot"
+            component = "Floodplain"
 
         qry = "INSERT INTO tbl_scan_log \
             (scan_instance_id, generated, component, type, message) \

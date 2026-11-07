@@ -46,7 +46,7 @@ class TestSf(unittest.TestCase):
 
     def test_no_args_should_print_arg_l_required(self):
         out, err, code = self.execute([sys.executable, "sf.py"])
-        self.assertIn(b"SpiderFoot requires -l <ip>:<port> to start the web server. Try --help for guidance.", out)
+        self.assertIn(b"Floodplain requires -l <ip>:<port> to start the web server. Try --help for guidance.", out)
         self.assertEqual(b"", err)
         self.assertEqual(255, code)
 
@@ -135,8 +135,8 @@ class TestSf(unittest.TestCase):
 
         expected_output = [
             "Source,Type,Data",
-            "SpiderFoot UI,Internet Name,spiderfoot.net,spiderfoot.net\n",
-            "SpiderFoot UI,Domain Name,spiderfoot.net,spiderfoot.net\n",
+            "Floodplain UI,Internet Name,spiderfoot.net,spiderfoot.net\n",
+            "Floodplain UI,Domain Name,spiderfoot.net,spiderfoot.net\n",
             "sfp_countryname,Country Name,spiderfoot.net,United States\n",
         ]
         for output in expected_output:

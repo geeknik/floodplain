@@ -7,7 +7,7 @@ from spiderfoot import SpiderFootDb
 
 
 class SpiderFootCorrelator:
-    """SpiderFoot correlation capabilities.
+    """Floodplain correlation capabilities.
 
     Todo:
         Make the rule checking per analysis method
@@ -47,7 +47,7 @@ class SpiderFootCorrelator:
     }
 
     def __init__(self, dbh: SpiderFootDb, ruleset: dict, scanId: str = None) -> None:
-        """Initialize SpiderFoot correlator engine with scan ID and ruleset.
+        """Initialize Floodplain correlator engine with scan ID and ruleset.
 
         Args:
             dbh (SpiderFootDb): database handle

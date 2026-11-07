@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_abusix
-# Purpose:     SpiderFoot plug-in for looking up whether IPs/Netblocks/Domains
+# Purpose:     Floodplain module for looking up whether IPs/Netblocks/Domains
 #              appear in the Abusix Mail Intelligence blacklist.
 #
 # Author:      <bcoles@gmail.com>

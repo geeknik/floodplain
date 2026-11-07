@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_networksdb
-# Purpose:     SpiderFoot plug-in to search NetworksDB.io API for IP address and
+# Purpose:     Floodplain module to search NetworksDB.io API for IP address and
 #              domain information.
 #
 # Author:      <bcoles@gmail.com>

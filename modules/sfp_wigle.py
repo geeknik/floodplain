@@ -114,7 +114,7 @@ class sfp_wigle(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             "https://api.wigle.net/api/v2/network/search?" + urllib.parse.urlencode(params),
             timeout=30,
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
             headers=hdrs
         )
 

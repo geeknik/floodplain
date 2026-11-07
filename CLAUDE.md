@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Floodplain is a fork of **SpiderFoot 4.0** — an OSINT (open source intelligence) automation tool. It runs 230+ pluggable collection modules in a publisher/subscriber pipeline against a target (domain, IP, email, phone, username, bitcoin address, etc.), stores findings in SQLite, and applies a YAML-driven correlation engine. It exposes both a CherryPy web UI and a CLI.
+Floodplain is a fork of **SpiderFoot 4.0** — an OSINT (open source intelligence) automation tool. It runs 200+ pluggable collection modules in a publisher/subscriber pipeline against a target (domain, IP, email, phone, username, bitcoin address, etc.), stores findings in SQLite, and applies a YAML-driven correlation engine. It exposes both a CherryPy web UI and a CLI.
 
 The rebrand from "SpiderFoot" to "Floodplain" is **only partially done**: `VERSION` reads `Floodplain 4.0.0` and `sf.py` prints the Floodplain name, but the Python package is still `spiderfoot/`, modules still use the `sfp_` prefix, entrypoints are still `sf*.py`, the data directory is still `~/.spiderfoot/`, and ~5000 `spiderfoot` string references remain across the tree. Do not assume a name is wrong just because it says "spiderfoot" — that is the current expected state. See `ROADMAP.md` for the planned migration order.
 
@@ -73,7 +73,7 @@ pip-audit --strict -r requirements.lock        # full locked closure (hash-pinne
 - `helpers.py` — `SpiderFootHelpers`: module/rule loading (`loadModulesAsDict`, `loadCorrelationRulesRaw`), `dataPath()` (`~/.spiderfoot`), target-type detection, scan ID generation, wordlists.
 - `logger.py` — multiprocessing-safe logging via a shared queue (`logListenerSetup`/`logWorkerSetup`); modules log through `self.debug/info/error`, which inject the `scanId`.
 
-### Modules (`modules/`, ~233 files, `sfp_*.py`)
+### Modules (`modules/`, ~209 files, `sfp_*.py`)
 Each module is a single file defining a class named identically to the file (`sfp_dnsresolve.py` → `class sfp_dnsresolve(SpiderFootPlugin)`). A module declares:
 - `meta` dict — `name`, `summary`, `flags`, `useCases` (`Footprint`/`Investigate`/`Passive`), `categories`, and (for API modules) `dataSource` with `apiKeyInstructions`.
 - `opts` / `optdescs` — user-configurable options and their descriptions.
@@ -92,6 +92,15 @@ The scanner builds the module graph by matching `producedEvents`/`watchedEvents`
 - `test/integration/` — heavier; `test/integration/modules/` hits live third-party services and is excluded from PR runs (most self-skip without API keys).
 - `test/acceptance/` — Robot Framework browser tests against a running web server on port 5001.
 - `test/conftest.py` — provides `default_options` / `web_default_options` / `cli_default_options` fixtures; tests use a separate `spiderfoot.test.db`.
+
+## Keeping docs in sync
+
+Any change that adds, removes, renames or re-describes a module, option, CLI flag, event type or user-visible feature must update the docs **in the same commit**:
+
+- `README.md` module table — enforced by `test/unit/test_readme_modules.py` (part of the PR gate). Rows are derived from module metadata: `[meta name](dataSource/toolDetails website)|meta summary|type`, sorted case-insensitively; the failure message prints the exact row to add/replace.
+- `README.md` feature list / counts, `ROADMAP.md` status, and `CLAUDE.md` (this file) when architecture, commands or counts change.
+- `docs/module-health-*.md` when a module is removed or retired for service health.
+- Removing a module also means removing its unit + integration tests and any references (e.g. trusted-module lists such as `sfp_names`).
 
 ## Security doctrine
 

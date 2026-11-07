@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_skymem
-# Purpose:      SpiderFoot plug-in for retrieving up to 100 e-mail addresses
+# Purpose:      Floodplain module for retrieving up to 100 e-mail addresses
 #               belonging to your target from Skymem.
 #
 # Author:      <bcoles@gmail.com>

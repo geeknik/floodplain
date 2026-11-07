@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_tool_nmap
-# Purpose:      SpiderFoot plug-in for using nmap to perform OS fingerprinting.
+# Purpose:      Floodplain module for using nmap to perform OS fingerprinting.
 #
 # Author:      Steve Micallef <steve@binarypool.com>
 #

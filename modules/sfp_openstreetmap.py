@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_openstreetmap
-# Purpose:      SpiderFoot plug-in to retrieve latitude/longitude coordinates
+# Purpose:      Floodplain module to retrieve latitude/longitude coordinates
 #               for physical addresses from OpenStreetMap API.
 #
 # Author:      <bcoles@gmail.com>
@@ -76,7 +76,7 @@ class sfp_openstreetmap(SpiderFootPlugin):
         }
 
         res = self.sf.fetchUrl("https://nominatim.openstreetmap.org/search?" + urllib.parse.urlencode(params),
-                               timeout=self.opts['_fetchtimeout'], useragent='SpiderFoot')
+                               timeout=self.opts['_fetchtimeout'], useragent=self.opts.get('_useragent', "Floodplain"))
 
         if res['content'] is None:
             self.info("No location info found for " + qry)

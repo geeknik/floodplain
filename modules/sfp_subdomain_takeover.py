@@ -51,7 +51,7 @@ class sfp_subdomain_takeover(SpiderFootPlugin):
         content = self.sf.cacheGet("subjack-fingerprints", 48)
         if content is None:
             url = "https://raw.githubusercontent.com/haccer/subjack/master/fingerprints.json"
-            res = self.sf.fetchUrl(url, useragent="SpiderFoot")
+            res = self.sf.fetchUrl(url, useragent=self.opts.get('_useragent', "Floodplain"))
 
             if res['content'] is None:
                 self.error(f"Unable to fetch {url}")

@@ -103,7 +103,7 @@ class sfp_clearbit(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://person.clearbit.com/v2/combined/find?{urllib.parse.urlencode(params)}",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
             headers=headers
         )
 

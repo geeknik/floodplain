@@ -130,7 +130,7 @@ class TestSpiderFootWebUiRoutes(helper.CPWebCase):
         self.assertStatus('200 OK')
         self.getPage("/optsexport?pattern=api_key")
         self.assertStatus('200 OK')
-        self.assertHeader("Content-Disposition", "attachment; filename=\"SpiderFoot.cfg\"")
+        self.assertHeader("Content-Disposition", "attachment; filename=\"Floodplain.cfg\"")
         self.assertInBody(":api_key=")
 
     def test_optsraw(self):
@@ -190,7 +190,7 @@ class TestSpiderFootWebUiRoutes(helper.CPWebCase):
     def test_startscan_unrecognized_scan_target_returns_error(self):
         self.getPage("/startscan?scanname=example-scan&scantarget=invalid-target&modulelist=doesnotexist&typelist=doesnotexist&usecase=doesnotexist")
         self.assertStatus('200 OK')
-        self.assertInBody('Invalid target type. Could not recognize it as a target SpiderFoot supports.')
+        self.assertInBody('Invalid target type. Could not recognize it as a target Floodplain supports.')
 
     def test_startscan_invalid_modules_returns_error(self):
         self.getPage("/startscan?scanname=example-scan&scantarget=spiderfoot.net&modulelist=&typelist=&usecase=")

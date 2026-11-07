@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_onyphe
-# Purpose:      SpiderFoot plug-in to check if the IP is included on Onyphe
+# Purpose:      Floodplain module to check if the IP is included on Onyphe
 #               data (threat list, geo-location, pastries, vulnerabilities)
 #
 # Author:      Filip Aleksić <faleksicdev@gmail.com>

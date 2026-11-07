@@ -75,7 +75,7 @@ class sfp_projectdiscovery(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://dns.projectdiscovery.io/dns/{qry}/subdomains",
             timeout=self.opts["_fetchtimeout"],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
             headers=headers,
         )
 

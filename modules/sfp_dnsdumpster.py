@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_dnsdumpster
-# Purpose:     SpiderFoot plug-in for subdomain enumeration using
+# Purpose:     Floodplain module for subdomain enumeration using
 #              dnsdumpster.com
 #
 # Author:      TheTechromancer
@@ -56,7 +56,7 @@ class sfp_dnsdumpster(SpiderFootPlugin):
         url = "https://dnsdumpster.com"
         res1 = self.sf.fetchUrl(
             url,
-            useragent=self.opts.get("_useragent", "Spiderfoot")
+            useragent=self.opts.get("_useragent", "Floodplain")
         )
         if res1["code"] not in ["200"]:
             self.error(f"Bad response code \"{res1['code']}\" from DNSDumpster")
@@ -99,7 +99,7 @@ class sfp_dnsdumpster(SpiderFootPlugin):
                 "origin": "https://dnsdumpster.com",
                 "referer": "https://dnsdumpster.com/"
             },
-            useragent=self.opts.get("_useragent", "Spiderfoot")
+            useragent=self.opts.get("_useragent", "Floodplain")
         )
         if res2["code"] not in ["200"]:
             self.error(f"Bad response code \"{res2['code']}\" from DNSDumpster")

@@ -109,7 +109,7 @@ class sfp_securitytrails(SpiderFootPlugin):
             headers['Content-Type'] = 'application/json'
 
         res = self.sf.fetchUrl(url, timeout=self.opts['_fetchtimeout'],
-                               useragent="SpiderFoot", headers=headers,
+                               useragent=self.opts.get('_useragent', "Floodplain"), headers=headers,
                                postData=request)
 
         if res['code'] in ["400", "429", "500", "403"]:

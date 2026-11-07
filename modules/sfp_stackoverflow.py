@@ -92,7 +92,7 @@ class sfp_stackoverflow(SpiderFootPlugin):
                 res = self.sf.fetchUrl(
                     f"https://api.stackexchange.com/2.3/search/excerpts?order=desc&q={qry}&site=stackoverflow",
                     timeout=self.opts['_fetchtimeout'],
-                    useragent="SpiderFoot"
+                    useragent=self.opts.get('_useragent', "Floodplain")
                 )
                 time.sleep(1)
             except Exception as e:
@@ -106,7 +106,7 @@ class sfp_stackoverflow(SpiderFootPlugin):
                 res = self.sf.fetchUrl(
                     f"https://api.stackexchange.com/2.3/questions/{qry}?order=desc&sort=activity&site=stackoverflow",
                     timeout=self.opts['_fetchtimeout'],
-                    useragent="SpiderFoot"
+                    useragent=self.opts.get('_useragent', "Floodplain")
                 )
                 time.sleep(1)
             except Exception as e:

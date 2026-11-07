@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_dnsneighbor
-# Purpose:      SpiderFoot plug-in for gathering IP addresses from sub-domains
+# Purpose:      Floodplain module for gathering IP addresses from sub-domains
 #               and hostnames identified, and optionally affiliates.
 #
 # Author:      Steve Micallef <steve@binarypool.com>

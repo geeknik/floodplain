@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_opencorporates
-# Purpose:      SpiderFoot plug-in for retrieving company information from
+# Purpose:      Floodplain module for retrieving company information from
 #               OpenCorporates.
 #
 # Author:      <bcoles@gmail.com>

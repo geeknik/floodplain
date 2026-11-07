@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_hosting
-# Purpose:      SpiderFoot plug-in for looking up whether IPs/Netblocks/Domains
+# Purpose:      Floodplain module for looking up whether IPs/Netblocks/Domains
 #               appear in an IP categorization table of hosting providers.
 #
 # Author:      Steve Micallef <steve@binarypool.com>

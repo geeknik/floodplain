@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_spamhaus
-# Purpose:      SpiderFoot plug-in for looking up whether IPs/Netblocks/Domains
+# Purpose:      Floodplain module for looking up whether IPs/Netblocks/Domains
 #               appear in the Spamhaus block lists, indicating potential open-relays,
 #               open proxies, malicious servers, vulnerable servers, etc.
 #

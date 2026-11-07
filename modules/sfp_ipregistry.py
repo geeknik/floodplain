@@ -72,7 +72,7 @@ class sfp_ipregistry(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://api.ipregistry.co/{qry}?{qs}",
             timeout=self.opts["_fetchtimeout"],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
         )
 
         if res["content"] is None:

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_crossref
-# Purpose:      SpiderFoot plug-in for scanning links identified from the
+# Purpose:      Floodplain module for scanning links identified from the
 #               spidering process, and for external links, fetching them to
 #               see if those sites link back to the original site, indicating a
 #               potential relationship between the external sites.

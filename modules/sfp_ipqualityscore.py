@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_ipqualityscore
-# Purpose:      Spiderfoot module to check whether a target is malicious
+# Purpose:      Floodplain module to check whether a target is malicious
 #               using IPQualityScore API
 #
 # Author:      Krishnasis Mandal <krishnasis@hotmail.com>
@@ -113,7 +113,7 @@ class sfp_ipqualityscore(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             queryString,
             timeout=self.opts["_fetchtimeout"],
-            useragent="SpiderFoot",
+            useragent=self.opts.get('_useragent', "Floodplain"),
         )
 
         if not res['content']:

@@ -83,7 +83,7 @@ class sfp_emailrep(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             'https://emailrep.io/' + qry,
             headers=headers,
-            useragent='SpiderFoot',
+            useragent=self.opts.get('_useragent', "Floodplain"),
             timeout=self.opts['_fetchtimeout']
         )
 

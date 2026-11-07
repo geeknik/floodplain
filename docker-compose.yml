@@ -9,7 +9,7 @@ version: "3"
 # Full image (all CLI tools installed):
 #     $ docker-compose -f docker-compose.yml -f docker-compose-full.yml up
 #
-# Spiderfoot data resides in a Docker volume
+# Floodplain data resides in a Docker volume
 #
 #     $ ls -lh /var/lib/docker/volumes/spiderfoot_spiderfoot-data/_data
 #       total 104K
@@ -17,16 +17,17 @@ version: "3"
 #       -rw-r--r-- 1 user user 100K Sep 22 15:19 spiderfoot.db
 
 services:
-  spiderfoot:
+  floodplain:
     build:
       context: ./
     volumes:
-      - spiderfoot-data:/var/lib/spiderfoot
-    image: spiderfoot
-    container_name: spiderfoot
+      - spiderfoot-data:/var/lib/floodplain
+    image: floodplain
+    container_name: floodplain
     ports:
       - "5001:5001"
     restart: unless-stopped
 
 volumes:
+  # Volume name kept as-is so existing deployments retain their scan data.
   spiderfoot-data:

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_honeypot
-# Purpose:     SpiderFoot plug-in for looking up whether IPs appear in the
+# Purpose:     Floodplain module for looking up whether IPs appear in the
 #              ProjectHoneyPot.org database.
 #
 # Author:      Steve Micallef <steve@binarypool.com>

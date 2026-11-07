@@ -63,7 +63,7 @@ class sfp_virustotal(SpiderFootPlugin):
 
     optdescs = {
         'api_key': 'VirusTotal API Key.',
-        'publicapi': 'Are you using a public key? If so SpiderFoot will pause for 15 seconds after each query to avoid VirusTotal dropping requests.',
+        'publicapi': 'Are you using a public key? If so Floodplain will pause for 15 seconds after each query to avoid VirusTotal dropping requests.',
         'checkcohosts': 'Check co-hosted sites?',
         'checkaffiliates': 'Check affiliates?',
         'netblocklookup': 'Look up all IPs on netblocks deemed to be owned by your target for possible hosts on the same target subdomain/domain?',
@@ -117,7 +117,7 @@ class sfp_virustotal(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://www.virustotal.com/vtapi/v2/ip-address/report?{params}",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot"
+            useragent=self.opts.get('_useragent', "Floodplain")
         )
 
         # Public API is limited to 4 queries per minute
@@ -145,7 +145,7 @@ class sfp_virustotal(SpiderFootPlugin):
         res = self.sf.fetchUrl(
             f"https://www.virustotal.com/vtapi/v2/domain/report?{params}",
             timeout=self.opts['_fetchtimeout'],
-            useragent="SpiderFoot"
+            useragent=self.opts.get('_useragent', "Floodplain")
         )
 
         if res['code'] == "204":

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:        sfp_tool_trufflehog
-# Purpose:     SpiderFoot plug-in for using the trufflehog tool.
+# Purpose:     Floodplain module for using the trufflehog tool.
 #              Tool: https://github.com/trufflesecurity/truffleHog
 #
 # Author:      <steve@binarypool.com>

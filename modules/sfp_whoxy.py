@@ -88,7 +88,7 @@ class sfp_whoxy(SpiderFootPlugin):
         url += "&" + querytype + "=" + qry + "&page=" + str(page)
 
         res = self.sf.fetchUrl(url, timeout=self.opts['_fetchtimeout'],
-                               useragent="SpiderFoot")
+                               useragent=self.opts.get('_useragent', "Floodplain"))
 
         if res['code'] in ["400", "429", "500", "403"]:
             self.error("Whoxy API key seems to have been rejected or you have exceeded usage limits.")

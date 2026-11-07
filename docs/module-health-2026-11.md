@@ -1,6 +1,6 @@
 # Module Health Sweep — 2026-11-07
 
-Floodplain inherited ~233 data-source modules from SpiderFoot 4.0 (2022). This
+Floodplain inherited 232 modules from SpiderFoot 4.0 (2022). This
 sweep checks which third-party services those modules depend on are still
 alive, migrated, retiring, or dead, and records the action taken.
 

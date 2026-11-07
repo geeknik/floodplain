@@ -115,7 +115,7 @@ class sfp_circllu(SpiderFootPlugin):
 
         # Be more forgiving with the timeout as some queries for subnets can be slow
         res = self.sf.fetchUrl(url, timeout=30,
-                               useragent="SpiderFoot", headers=headers)
+                               useragent=self.opts.get('_useragent', "Floodplain"), headers=headers)
 
         if res['code'] not in ["200", "201"]:
             self.error("CIRCL.LU access seems to have been rejected or you have exceeded usage limits.")

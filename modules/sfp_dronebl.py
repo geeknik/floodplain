@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_dronebl
-# Purpose:      SpiderFoot plug-in for looking up whether IPs/Netblocks/Domains
+# Purpose:      Floodplain module for looking up whether IPs/Netblocks/Domains
 #               appear in the DroneBL blocklist, indicating potential open-relays,
 #               open proxies, malicious servers, vulnerable servers, etc.
 #

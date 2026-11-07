@@ -47,7 +47,7 @@ mp.set_start_method("spawn", force=True)
 
 
 class SpiderFootWebUi:
-    """SpiderFoot web interface."""
+    """Floodplain web interface."""
 
     lookup = TemplateLookup(directories=[''])
     defaultConfig = dict()
@@ -60,7 +60,7 @@ class SpiderFootWebUi:
 
         Args:
             web_config (dict): config settings for web interface (interface, port, root path)
-            config (dict): SpiderFoot config
+            config (dict): Floodplain config
             loggingQueue: TBD
 
         Raises:
@@ -392,7 +392,7 @@ class SpiderFootWebUi:
                 row[4]
             ])
 
-        cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(f"SpiderFoot-{id}.log.csv")
+        cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(f"Floodplain-{id}.log.csv")
         cherrypy.response.headers['Content-Type'] = "application/csv"
         cherrypy.response.headers['Pragma'] = "no-cache"
         return fileobj.getvalue().encode('utf-8')
@@ -434,9 +434,9 @@ class SpiderFootWebUi:
                 rows.append([rule_name, correlation, rule_risk, rule_description])
 
             if scan_name:
-                fname = f"{scan_name}-SpiderFoot-correlations.xlsx"
+                fname = f"{scan_name}-Floodplain-correlations.xlsx"
             else:
-                fname = "SpiderFoot-correlations.xlsx"
+                fname = "Floodplain-correlations.xlsx"
 
             cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
             cherrypy.response.headers['Content-Type'] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -456,9 +456,9 @@ class SpiderFootWebUi:
                 parser.writerow([rule_name, correlation, rule_risk, rule_description])
 
             if scan_name:
-                fname = f"{scan_name}-SpiderFoot-correlations.csv"
+                fname = f"{scan_name}-Floodplain-correlations.csv"
             else:
-                fname = "SpiderFoot-correlations.csv"
+                fname = "Floodplain-correlations.csv"
 
             cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
             cherrypy.response.headers['Content-Type'] = "application/csv"
@@ -492,7 +492,7 @@ class SpiderFootWebUi:
                 datafield = str(row[1]).replace("<SFURL>", "").replace("</SFURL>", "")
                 rows.append([lastseen, str(row[4]), str(row[3]), str(row[2]), row[13], datafield])
 
-            fname = "SpiderFoot.xlsx"
+            fname = "Floodplain.xlsx"
             cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
             cherrypy.response.headers['Content-Type'] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             cherrypy.response.headers['Pragma'] = "no-cache"
@@ -510,7 +510,7 @@ class SpiderFootWebUi:
                 datafield = str(row[1]).replace("<SFURL>", "").replace("</SFURL>", "")
                 parser.writerow([lastseen, str(row[4]), str(row[3]), str(row[2]), row[13], datafield])
 
-            fname = "SpiderFoot.csv"
+            fname = "Floodplain.csv"
             cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
             cherrypy.response.headers['Content-Type'] = "application/csv"
             cherrypy.response.headers['Pragma'] = "no-cache"
@@ -556,9 +556,9 @@ class SpiderFootWebUi:
                             str(row[2]), row[13], datafield])
 
             if len(ids.split(',')) > 1 or scan_name == "":
-                fname = "SpiderFoot.xlsx"
+                fname = "Floodplain.xlsx"
             else:
-                fname = scan_name + "-SpiderFoot.xlsx"
+                fname = scan_name + "-Floodplain.xlsx"
 
             cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
             cherrypy.response.headers['Content-Type'] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -579,9 +579,9 @@ class SpiderFootWebUi:
                                 str(row[2]), row[13], datafield])
 
             if len(ids.split(',')) > 1 or scan_name == "":
-                fname = "SpiderFoot.csv"
+                fname = "Floodplain.csv"
             else:
-                fname = scan_name + "-SpiderFoot.csv"
+                fname = scan_name + "-Floodplain.csv"
 
             cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
             cherrypy.response.headers['Content-Type'] = "application/csv"
@@ -616,7 +616,7 @@ class SpiderFootWebUi:
                     continue
                 datafield = str(row[1]).replace("<SFURL>", "").replace("</SFURL>", "")
                 rows.append([row[0], str(row[10]), str(row[3]), str(row[2]), row[11], datafield])
-            cherrypy.response.headers['Content-Disposition'] = "attachment; filename=SpiderFoot.xlsx"
+            cherrypy.response.headers['Content-Disposition'] = "attachment; filename=Floodplain.xlsx"
             cherrypy.response.headers['Content-Type'] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             cherrypy.response.headers['Pragma'] = "no-cache"
             return self.buildExcel(rows, ["Updated", "Type", "Module", "Source",
@@ -631,7 +631,7 @@ class SpiderFootWebUi:
                     continue
                 datafield = str(row[1]).replace("<SFURL>", "").replace("</SFURL>", "")
                 parser.writerow([row[0], str(row[10]), str(row[3]), str(row[2]), row[11], datafield])
-            cherrypy.response.headers['Content-Disposition'] = "attachment; filename=SpiderFoot.csv"
+            cherrypy.response.headers['Content-Disposition'] = "attachment; filename=Floodplain.csv"
             cherrypy.response.headers['Content-Type'] = "application/csv"
             cherrypy.response.headers['Pragma'] = "no-cache"
             return fileobj.getvalue().encode('utf-8')
@@ -683,9 +683,9 @@ class SpiderFootWebUi:
                 })
 
         if len(ids.split(',')) > 1 or scan_name == "":
-            fname = "SpiderFoot.json"
+            fname = "Floodplain.json"
         else:
-            fname = scan_name + "-SpiderFoot.json"
+            fname = scan_name + "-Floodplain.json"
 
         cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
         cherrypy.response.headers['Content-Type'] = "application/json; charset=utf-8"
@@ -721,14 +721,14 @@ class SpiderFootWebUi:
             return SpiderFootHelpers.buildGraphJson([root], data)
 
         if not scan_name:
-            fname = "SpiderFoot.gexf"
+            fname = "Floodplain.gexf"
         else:
-            fname = scan_name + "SpiderFoot.gexf"
+            fname = scan_name + "-Floodplain.gexf"
 
         cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
         cherrypy.response.headers['Content-Type'] = "application/gexf"
         cherrypy.response.headers['Pragma'] = "no-cache"
-        return SpiderFootHelpers.buildGraphGexf([root], "SpiderFoot Export", data)
+        return SpiderFootHelpers.buildGraphGexf([root], "Floodplain Export", data)
 
     @cherrypy.expose
     def scanvizmulti(self: 'SpiderFootWebUi', ids: str, gexf: str = "1") -> str:
@@ -765,14 +765,14 @@ class SpiderFootWebUi:
             return None
 
         if len(ids.split(',')) > 1 or scan_name == "":
-            fname = "SpiderFoot.gexf"
+            fname = "Floodplain.gexf"
         else:
-            fname = scan_name + "-SpiderFoot.gexf"
+            fname = scan_name + "-Floodplain.gexf"
 
         cherrypy.response.headers['Content-Disposition'] = self.build_content_disposition(fname)
         cherrypy.response.headers['Content-Type'] = "application/gexf"
         cherrypy.response.headers['Pragma'] = "no-cache"
-        return SpiderFootHelpers.buildGraphGexf(roots, "SpiderFoot Export", data)
+        return SpiderFootHelpers.buildGraphGexf(roots, "Floodplain Export", data)
 
     @cherrypy.expose
     @cherrypy.tools.json_out()
@@ -917,7 +917,7 @@ class SpiderFootWebUi:
             targetType = SpiderFootHelpers.targetTypeFromString(scantarget)
             if targetType is None:
                 # Should never be triggered for a re-run scan..
-                return self.error("Invalid target type. Could not recognize it as a target SpiderFoot supports.")
+                return self.error("Invalid target type. Could not recognize it as a target Floodplain supports.")
 
             # Start running a new scan
             scanId = SpiderFootHelpers.genScanInstanceId()
@@ -1059,7 +1059,7 @@ class SpiderFootWebUi:
             else:
                 content += f"{opt}={conf[opt]}\n"
 
-        cherrypy.response.headers['Content-Disposition'] = 'attachment; filename="SpiderFoot.cfg"'
+        cherrypy.response.headers['Content-Disposition'] = 'attachment; filename="Floodplain.cfg"'
         cherrypy.response.headers['Content-Type'] = "text/plain"
         return content
 
@@ -1156,7 +1156,7 @@ class SpiderFootWebUi:
 
                 allopts = json.dumps(tmp).encode('utf-8')
             except Exception as e:
-                return self.error(f"Failed to parse input file. Was it generated from SpiderFoot? ({e})")
+                return self.error(f"Failed to parse input file. Was it generated from Floodplain? ({e})")
 
         # Reset config to default
         if allopts == "RESET":
@@ -1373,7 +1373,7 @@ class SpiderFootWebUi:
         """For the CLI to test connectivity to this server.
 
         Returns:
-            list: SpiderFoot version as JSON
+            list: Floodplain version as JSON
         """
         return ["SUCCESS", __version__]
 
@@ -1451,7 +1451,7 @@ class SpiderFootWebUi:
                 cherrypy.response.headers['Content-Type'] = "application/json; charset=utf-8"
                 return json.dumps(["ERROR", "Unrecognised target type."]).encode('utf-8')
 
-            return self.error("Invalid target type. Could not recognize it as a target SpiderFoot supports.")
+            return self.error("Invalid target type. Could not recognize it as a target Floodplain supports.")
 
         # Swap the globalscantable for the database handler
         dbh = SpiderFootDb(self.config)
@@ -1568,7 +1568,7 @@ class SpiderFootWebUi:
                 return self.jsonify_error('400', f"Scan {scan_id} has already aborted.")
 
             if scan_status != "RUNNING" and scan_status != "STARTING":
-                return self.jsonify_error('400', f"The running scan is currently in the state '{scan_status}', please try again later or restart SpiderFoot.")
+                return self.jsonify_error('400', f"The running scan is currently in the state '{scan_status}', please try again later or restart Floodplain.")
 
         for scan_id in ids:
             dbh.scanInstanceSet(scan_id, status="ABORT-REQUESTED")

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_dnsraw
-# Purpose:      SpiderFoot plug-in for collecting raw DNS records.
+# Purpose:      Floodplain module for collecting raw DNS records.
 #               Also extracts hostnames from SPF records.
 #
 # Author:      Steve Micallef <steve@binarypool.com>

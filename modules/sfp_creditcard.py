@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_creditcard
-# Purpose:      SpiderFoot plug-in for scanning retrieved content by other
+# Purpose:      Floodplain module for scanning retrieved content by other
 #               modules (such as sfp_spider) and identifying credit card numbers.
 #
 # Author:      Krishnasis Mandal <krishnasis@hotmail.com>

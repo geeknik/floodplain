@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_hackertarget
-# Purpose:      SpiderFoot plug-in to search HackerTarget.com for hosts sharing
+# Purpose:      Floodplain module to search HackerTarget.com for hosts sharing
 #               the same IP. Optionally, also perform a basic TCP/UDP port scan
 #               for commonly open ports using HackerTarget.com port scan tools.
 #

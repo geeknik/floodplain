@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sf
-# Purpose:      Main wrapper for calling all SpiderFoot modules
+# Purpose:      Main wrapper for calling all Floodplain modules
 #
 # Author:      Steve Micallef <steve@binarypool.com>
 #
@@ -265,10 +265,10 @@ def start_scan(sfConfig: dict, sfModules: dict, args, loggingQueue) -> None:
     """Start scan
 
     Args:
-        sfConfig (dict): SpiderFoot config options
+        sfConfig (dict): Floodplain config options
         sfModules (dict): modules
         args (argparse.Namespace): command line args
-        loggingQueue (Queue): main SpiderFoot logging queue
+        loggingQueue (Queue): main Floodplain logging queue
     """
     log = logging.getLogger(f"spiderfoot.{__name__}")
 
@@ -492,8 +492,8 @@ def start_web_server(sfWebUiConfig: dict, sfConfig: dict, loggingQueue=None) -> 
 
     Args:
         sfWebUiConfig (dict): web server options
-        sfConfig (dict): SpiderFoot config options
-        loggingQueue (Queue): main SpiderFoot logging queue
+        sfConfig (dict): Floodplain config options
+        loggingQueue (Queue): main Floodplain logging queue
     """
     log = logging.getLogger(f"spiderfoot.{__name__}")
 
@@ -562,7 +562,7 @@ def start_web_server(sfWebUiConfig: dict, sfConfig: dict, loggingQueue=None) -> 
         warn_msg = "\n********************************************************************\n"
         warn_msg += "Warning: passwd file contains no passwords. Authentication disabled.\n"
         warn_msg += "Please consider adding authentication to protect this instance!\n"
-        warn_msg += "Refer to https://www.spiderfoot.net/documentation/#security.\n"
+        warn_msg += f"Create {SpiderFootHelpers.dataPath()}/passwd with one 'username:password' line per user.\n"
         warn_msg += "********************************************************************\n"
         log.warning(warn_msg)
 
@@ -604,7 +604,7 @@ def start_web_server(sfWebUiConfig: dict, sfConfig: dict, loggingQueue=None) -> 
 
     print("")
     print("*************************************************************")
-    print(" Use SpiderFoot by starting your web browser of choice and ")
+    print(" Use Floodplain by starting your web browser of choice and ")
     print(f" browse to {url}")
     print("*************************************************************")
     print("")
@@ -634,19 +634,19 @@ def handle_abort(signal, frame) -> None:
 
 
 if __name__ == '__main__':
-    if sys.version_info < (3, 7):
-        print("SpiderFoot requires Python 3.7 or higher.")
+    if sys.version_info < (3, 10):
+        print("Floodplain requires Python 3.10 or higher.")
         sys.exit(-1)
 
     if len(sys.argv) <= 1:
-        print("SpiderFoot requires -l <ip>:<port> to start the web server. Try --help for guidance.")
+        print("Floodplain requires -l <ip>:<port> to start the web server. Try --help for guidance.")
         sys.exit(-1)
 
     # TODO: remove this after a few releases (added in 3.5 pre-release 2021-09-05)
     from pathlib import Path
     if os.path.exists('spiderfoot.db'):
         print(f"ERROR: spiderfoot.db file exists in {os.path.dirname(__file__)}")
-        print("SpiderFoot no longer supports loading the spiderfoot.db database from the application directory.")
+        print("Floodplain no longer supports loading the spiderfoot.db database from the application directory.")
         print(f"The database is now loaded from your home directory: {Path.home()}/.spiderfoot/spiderfoot.db")
         print(f"This message will go away once you move or remove spiderfoot.db from {os.path.dirname(__file__)}")
         sys.exit(-1)
@@ -655,7 +655,7 @@ if __name__ == '__main__':
     from pathlib import Path
     if os.path.exists('passwd'):
         print(f"ERROR: passwd file exists in {os.path.dirname(__file__)}")
-        print("SpiderFoot no longer supports loading credentials from the application directory.")
+        print("Floodplain no longer supports loading credentials from the application directory.")
         print(f"The passwd file is now loaded from your home directory: {Path.home()}/.spiderfoot/passwd")
         print(f"This message will go away once you move or remove passwd from {os.path.dirname(__file__)}")
         sys.exit(-1)

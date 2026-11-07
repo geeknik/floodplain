@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -------------------------------------------------------------------------------
 # Name:         sfp_quad9
-# Purpose:      SpiderFoot plug-in for looking up whether hosts are blocked by
+# Purpose:      Floodplain module for looking up whether hosts are blocked by
 #               Quad 9 (9.9.9.9)
 #
 # Author:      Steve Micallef <steve@binarypool.com>
