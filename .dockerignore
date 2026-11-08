@@ -16,3 +16,15 @@ spiderfoot.test.db
 __pycache__
 htmlcov/
 docs/
+
+# Never bake local data or secrets into an image
+floodplain.db*
+floodplain.test*.db
+floodplain.key
+floodplain.crt
+spiderfoot.key
+spiderfoot.crt
+passwd
+.env
+*.patch
+results/

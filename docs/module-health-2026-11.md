@@ -170,3 +170,16 @@ That test also found two modules with no size check at all:
 * `sfp_virustotal` had the same prefix-only check under a different log
   message.
 
+## External tool modules (2026-11-07)
+
+Reviewed while hardening `Dockerfile.full`, using the current release of each
+tool:
+
+| Module | Finding | Action |
+|---|---|---|
+| `sfp_tool_wappalyzer` | Wappalyzer went closed-source; its GitHub repository (`AliasIO/wappalyzer`, `wappalyzer/wappalyzer`) returns 404, so the tool cannot be installed and `Dockerfile.full` could not build. | **Removed** (module + tests). Google Chrome, which was only installed for it, was dropped from the image. |
+| `sfp_tool_trufflehog` | Spoke the TruffleHog v2 (Python) CLI. v2 is unmaintained since 2021 and hard-pins GitPython 3.0.6 (three CVEs) while cloning attacker-influenced repositories. It also stored every matched secret in full. | **Ported to TruffleHog v3** (`trufflehog git --json --no-update --no-verification`), tested against real v3.99.8 output. Findings keep detector, file:line, commit and a masked secret; raw secrets, extra data, author email and local paths are discarded. `--no-verification` keeps Floodplain from trying found credentials against live services. |
+| `sfp_tool_nuclei` | Passed `-json`, which Nuclei v3 removed, so it failed with every current Nuclei. `-etags dos fuzz misc` passed two tags as stray arguments. Hosts were taken from `matched-at.split(":")[0]` (yielding `https`). CVEs were regex-matched across the whole output line, including the scanned target's HTTP response, so a hostile target could inject fake CVE findings. | Uses `-jsonl -omit-raw -disable-update-check`, comma-joined tags, the validated `host` field, and CVEs only from the template's `classification.cve-id`; tested against real v3.11.1 output. Lines are parsed independently and capped. |
+| `sfp_tool_whatweb` | Passed `timeout=` to `Popen()` (a `TypeError` on every run), and concatenated `bytes` output with `str` on errors. | Fixed; regression tests added. |
+| `sfp_tool_cmseek` | No timeout on the subprocess — a stalling target hung the module forever. | 600 s timeout. |
+

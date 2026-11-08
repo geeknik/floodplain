@@ -1,133 +1,142 @@
+# syntax=docker/dockerfile:1
 #
-# Floodplain Dockerfile (Full - includes all CLI tools, etc.)
+# Floodplain Dockerfile (Full - includes the external CLI tools used by the
+# sfp_tool_* modules).
 #
 # https://github.com/geeknik/floodplain
 #
-# Written by: TheTechromancer
+# Originally written by: TheTechromancer
 #
+# Supply-chain rules for this image (AETHER doctrine section 6):
+#   * The base image is pinned by digest.
+#   * OS packages come only from Debian's signed archive (no third-party apt
+#     repositories, no apt-key, no --allow-unauthenticated).
+#   * Downloaded binaries are verified against pinned SHA-256 checksums.
+#   * Git sources are pinned to a tag or commit and the checked-out commit is
+#     verified.
+#   * Python tools install hash-verified from docker/tools-requirements.lock
+#     into their own virtualenv, separate from Floodplain's /opt/venv.
+#
+# Build:   docker build -f Dockerfile.full -t floodplain-full .
+# Run:     docker run -p 5001:5001 --security-opt no-new-privileges floodplain-full
+#
+# To update a tool, change its version/commit AND checksum together.
 
-FROM python:3.13-trixie
+FROM python:3.13-trixie@sha256:ecbe213fb818d557fd19db4078244339e2e2e52874f9c81052d3094ea114d797
 
-# Install tools/dependencies from apt
-RUN apt-get -y update && apt-get -y install nbtscan onesixtyone nmap
+ARG TARGETARCH
+ENV DEBIAN_FRONTEND=noninteractive
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Compile other tools from source
-RUN mkdir /tools || true
+# OS packages: scanners from Debian, plus runtimes for WhatWeb (Ruby) and
+# retire.js (Node.js 20 from Debian; no NodeSource script).
+# Versions come from the digest-pinned base's signed Debian archive; exact apt
+# pins would break rebuilds as Debian drops superseded point releases.
+# hadolint ignore=DL3008
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       ca-certificates curl git unzip \
+       nbtscan onesixtyone nmap \
+       ruby ruby-addressable \
+       nodejs npm \
+       bsdextrautils dnsutils procps \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /tools
 
-# Install Golang tools
-RUN apt-get -y update && apt-get -y install golang
-ENV GOPATH="/go"
-ENV PATH="$GOPATH/bin:$PATH"
-RUN mkdir -p "$GOPATH/src" "$GOPATH/bin"
+# Nuclei (Go binary) - pinned release, SHA-256 verified.
+ARG NUCLEI_VERSION=3.11.1
+RUN set -eux; \
+    case "${TARGETARCH:-amd64}" in \
+      amd64) sha=ea63d4ae232808cd7c6bc00d0142428e231fab59dae01042246097d195835ab6 ;; \
+      arm64) sha=8044e3d9768ba0a744b2872c1a87e813006f013da97ca9f50f7661a4203bec07 ;; \
+      *) echo "Unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL -o /tmp/nuclei.zip \
+      "https://github.com/projectdiscovery/nuclei/releases/download/v${NUCLEI_VERSION}/nuclei_${NUCLEI_VERSION}_linux_${TARGETARCH:-amd64}.zip"; \
+    echo "${sha}  /tmp/nuclei.zip" | sha256sum -c -; \
+    unzip -o /tmp/nuclei.zip nuclei -d /tools; \
+    rm /tmp/nuclei.zip; \
+    chmod 0755 /tools/nuclei
 
-# Install Ruby tools for WhatWeb
-RUN apt-get -y update && apt-get -y install ruby ruby-dev bundler
-# Install WhatWeb
-RUN git clone https://github.com/urbanadventurer/WhatWeb \
-    && gem install rchardet mongo json && cd /tools/WhatWeb \
-    && bundle install && cd /tools
+# TruffleHog v3 (Go binary) - pinned release, SHA-256 verified.
+ARG TRUFFLEHOG_VERSION=3.99.8
+RUN set -eux; \
+    case "${TARGETARCH:-amd64}" in \
+      amd64) sha=7c3b02f160f28929a467e29e20fba98746e0729f6e37c3c25761e4f8789abe08 ;; \
+      arm64) sha=a0382d83dd58c967af5dd0175cc732c62c836ab1d15dc9ae71b01a2d3f0911b2 ;; \
+      *) echo "Unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL -o /tmp/trufflehog.tar.gz \
+      "https://github.com/trufflesecurity/trufflehog/releases/download/v${TRUFFLEHOG_VERSION}/trufflehog_${TRUFFLEHOG_VERSION}_linux_${TARGETARCH:-amd64}.tar.gz"; \
+    echo "${sha}  /tmp/trufflehog.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/trufflehog.tar.gz -C /tools trufflehog; \
+    rm /tmp/trufflehog.tar.gz; \
+    chmod 0755 /tools/trufflehog
+
+# Git-sourced tools - pinned tag/commit, checked-out commit verified.
+RUN set -eux; \
+    fetch() { \
+      git init -q "$3"; \
+      git -C "$3" fetch -q --depth 1 "$1" "$2"; \
+      git -C "$3" checkout -q FETCH_HEAD; \
+      test "$(git -C "$3" rev-parse HEAD)" = "$4"; \
+      rm -rf "$3/.git"; \
+    }; \
+    fetch https://github.com/projectdiscovery/nuclei-templates.git refs/tags/v10.5.1 /tools/nuclei-templates 79fb682760ab3d5b0e22afbb44709353cbebf023; \
+    fetch https://github.com/testssl/testssl.sh.git refs/tags/v3.2.5 /tools/testssl.sh 4f17be931a9d60f3f987975aea8221f1a8eaf7aa; \
+    fetch https://github.com/urbanadventurer/WhatWeb.git refs/tags/v0.6.4 /tools/WhatWeb d279d93042d034f3fd29d5a893d44ccc0595d3f8; \
+    fetch https://github.com/Tuhinshubhra/CMSeeK.git 03a6e7f8580527a704c1f3c7429c3f474cfa42cf /tools/CMSeeK 03a6e7f8580527a704c1f3c7429c3f474cfa42cf; \
+    mkdir -p /tools/CMSeeK/Results
+
+# retire.js - exact version, install scripts disabled.
+RUN npm install --global --ignore-scripts --no-audit --no-fund retire@6.1.0 \
+    && npm cache clean --force
+
+# Python CLI tools (wafw00f, dnstwist, snallygaster, CMSeeK's requests) -
+# hash-verified, in their own virtualenv.
+COPY docker/tools-requirements.lock /tmp/tools-requirements.lock
+RUN python -m venv /opt/tools-venv \
+    && /opt/tools-venv/bin/pip install --no-cache-dir --require-hashes -r /tmp/tools-requirements.lock \
+    && rm /tmp/tools-requirements.lock
 
 RUN groupadd floodplain \
     && useradd -m -g floodplain -d /home/floodplain -s /sbin/nologin \
-    -c "Floodplain User" floodplain
-
-# Install RetireJS
-RUN apt remove -y cmdtest \
-    && apt remove -y yarn \
-    && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
-    && echo 'deb https://dl.yarnpkg.com/debian/ stable main' |tee /etc/apt/sources.list.d/yarn.list \
-    && apt-get update \
-    && apt-get install yarn -y \
-    && yarn install \
-    && curl -fsSL https://deb.nodesource.com/setup_17.x | bash - \
-    && apt-get install -y nodejs \
-    && npm install -g retire
-
-# Install Google Chrome the New Way (Not via apt-key)
-RUN wget -qO - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/googlechrome-linux-keyring.gpg \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/googlechrome-linux-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google-chrome.list \
-    && apt -y update && apt install --allow-unauthenticated -y google-chrome-stable
-
-# Install Wappalyzer
-RUN git clone https://github.com/AliasIO/wappalyzer.git \
-    && cd wappalyzer \
-    && yarn install && yarn run link
-
-# Install Nuclei
-RUN wget https://github.com/projectdiscovery/nuclei/releases/download/v2.6.5/nuclei_2.6.5_linux_amd64.zip \
-    && unzip nuclei_2.6.5_linux_amd64.zip \
-    && git clone https://github.com/projectdiscovery/nuclei-templates.git
-
-# Install testssl.sh
-RUN apt-get install -y bsdmainutils dnsutils coreutils
-RUN git clone https://github.com/drwetter/testssl.sh.git
-
-# Install Snallygaster and TruffleHog
-RUN pip3 install snallygaster trufflehog
+       -c "Floodplain User" floodplain
 
 # Place database and logs outside installation directory
-ENV FLOODPLAIN_DATA /var/lib/floodplain
-ENV FLOODPLAIN_LOGS /var/lib/floodplain/log
-ENV FLOODPLAIN_CACHE /var/lib/floodplain/cache
+ENV FLOODPLAIN_DATA=/var/lib/floodplain
+ENV FLOODPLAIN_LOGS=/var/lib/floodplain/log
+ENV FLOODPLAIN_CACHE=/var/lib/floodplain/cache
 
-RUN mkdir -p $FLOODPLAIN_DATA || true \
-    && mkdir -p $FLOODPLAIN_LOGS || true \
-    && mkdir -p $FLOODPLAIN_CACHE || true \
-    && chown floodplain:floodplain $FLOODPLAIN_DATA \
-    && chown floodplain:floodplain $FLOODPLAIN_LOGS \
-    && chown floodplain:floodplain $FLOODPLAIN_CACHE
+RUN mkdir -p "$FLOODPLAIN_DATA" "$FLOODPLAIN_LOGS" "$FLOODPLAIN_CACHE" \
+    && chown floodplain:floodplain "$FLOODPLAIN_DATA" "$FLOODPLAIN_LOGS" "$FLOODPLAIN_CACHE" \
+    && chmod 0700 "$FLOODPLAIN_DATA"
 
-WORKDIR /home/floodplain
-COPY . .
-
+# Floodplain itself - hash-verified from the lockfile.
 ENV VIRTUAL_ENV=/opt/venv
-RUN mkdir -p "$VIRTUAL_ENV" || true
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN python -m venv "$VIRTUAL_ENV"
-
-ARG REQUIREMENTS=requirements.txt
-
-RUN chown -R floodplain:floodplain /tools
-RUN chown -R floodplain:floodplain "$VIRTUAL_ENV"
-RUN chown -R floodplain:floodplain "/home/floodplain"
-
-USER floodplain
-
-RUN pip install --no-cache-dir --require-hashes -r requirements.lock
-RUN if [ "$REQUIREMENTS" != "requirements.txt" ]; then pip install --no-cache-dir -r "$REQUIREMENTS"; fi
-
-# Install Python tools
-RUN pip install dnstwist
-# CMSeeK
-WORKDIR /tools
-RUN git clone https://github.com/Tuhinshubhra/CMSeeK && cd CMSeeK \
-    && pip install -r requirements.txt && mkdir Results
-
-# Install wafw00f
-RUN git clone https://github.com/EnableSecurity/wafw00f \
-    && cd wafw00f \
-    && python3 setup.py install
 WORKDIR /home/floodplain
+COPY requirements.txt requirements.lock ./
+COPY test/requirements.txt test/requirements.txt
+ARG REQUIREMENTS=requirements.txt
+RUN python -m venv "$VIRTUAL_ENV" \
+    && pip install --no-cache-dir --require-hashes -r requirements.lock \
+    && if [ "$REQUIREMENTS" != "requirements.txt" ]; then pip install --no-cache-dir -r "$REQUIREMENTS"; fi
+
+COPY . .
+# Tools and application code stay root-owned and read-only to the runtime
+# user. Writable: the data directory, the user's home (tool config/caches)
+# and CMSeeK's results directory.
+RUN chown floodplain:floodplain /home/floodplain \
+    && chown -R floodplain:floodplain /tools/CMSeeK/Results
+
+# Named (not numeric) user kept for compatibility with existing data volumes.
+# hadolint ignore=DL3066
+USER floodplain
 
 EXPOSE 5001
 
-# Run the application
-CMD python -c 'from spiderfoot import SpiderFootDb; \
-db = SpiderFootDb({"__database": "/var/lib/floodplain/spiderfoot.db"}); \
-db.configSet({ \
-    "sfp_tool_dnstwist:dnstwistpath": "/opt/venv/bin/dnstwist", \
-    "sfp_tool_cmseek:cmseekpath": "/tools/CMSeeK/cmseek.py", \
-    "sfp_tool_whatweb:whatweb_path": "/tools/WhatWeb/whatweb", \
-    "sfp_tool_wafw00f:wafw00f_path": "/opt/venv/bin/wafw00f", \
-    "sfp_tool_onesixtyone:onesixtyone_path": "/usr/bin/onesixtyone", \
-    "sfp_tool_retirejs:retirejs_path": "/usr/bin/retire", \
-    "sfp_tool_testsslsh:testsslsh_path": "/tools/testssl.sh/testssl.sh", \
-    "sfp_tool_snallygaster:snallygaster_path": "/usr/local/bin/snallygaster", \
-    "sfp_tool_trufflehog:trufflehog_path": "/usr/local/bin/trufflehog", \
-    "sfp_tool_nuclei:nuclei_path": "/tools/nuclei", \
-    "sfp_tool_nuclei:template_path": "/tools/nuclei-templates", \
-    "sfp_tool_wappalyzer:wappalyzer_path": "/tools/wappalyzer/src/drivers/npm/cli.js", \
-    "sfp_tool_nbtscan:nbtscan_path": "/usr/bin/nbtscan", \
-    "sfp_tool_nmap:nmappath": "DISABLED_BECAUSE_NMAP_REQUIRES_ROOT_TO_WORK" \
-})' || true && ./sf.py -l 0.0.0.0:5001
+# Point the tool modules at the bundled binaries (only fills options that are
+# unset, so changes made in the web UI persist), then start the web UI.
+CMD ["/bin/sh", "-c", "python docker/configure_tools.py && exec python ./sf.py -l 0.0.0.0:5001"]

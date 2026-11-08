@@ -128,8 +128,8 @@ class sfp_tool_whatweb(SpiderFootPlugin):
             eventData
         ]
         try:
-            p = Popen(args, stdout=PIPE, stderr=PIPE, timeout=300)
-            stdout, stderr = p.communicate(input=None)
+            p = Popen(args, stdout=PIPE, stderr=PIPE)
+            stdout, stderr = p.communicate(input=None, timeout=300)
         except TimeoutExpired:
             p.kill()
             stdout, stderr = p.communicate()
@@ -141,7 +141,7 @@ class sfp_tool_whatweb(SpiderFootPlugin):
 
         if p.returncode != 0:
             self.error("Unable to read WhatWeb output.")
-            self.debug("Error running WhatWeb: " + stderr + ", " + stdout)
+            self.debug("Error running WhatWeb: " + stderr.decode('utf-8', errors='replace')[:2000])
             return
 
         if not stdout:

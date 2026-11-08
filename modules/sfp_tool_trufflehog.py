@@ -11,7 +11,6 @@
 # Licence:     MIT
 # -------------------------------------------------------------------------------
 
-import sys
 import json
 import os
 from subprocess import PIPE, Popen, TimeoutExpired
@@ -33,22 +32,26 @@ class sfp_tool_trufflehog(SpiderFootPlugin):
             'description': "TruffleHog searches through git repositories for secrets, "
                 "digging deep into commit history and branches. This is effective at "
                 "finding secrets accidentally committed.",
-            'website': "https://github.com/trufflesecurity/truffleHog",
-            'repository': "https://github.com/trufflesecurity/truffleHog",
+            'website': "https://github.com/trufflesecurity/trufflehog",
+            'repository': "https://github.com/trufflesecurity/trufflehog",
         },
     }
 
+    # Requires TruffleHog v3 (Go). The legacy Python v2 CLI is unmaintained and
+    # pins a vulnerable GitPython; it is no longer supported.
     opts = {
-        'entropy': False,
         'allrepos': False,
         'trufflehog_path': ''
     }
 
     optdescs = {
-        'trufflehog_path': "Path to your trufflehog binary. Must be set.",
-        'entropy': "Enable entropy checks? If disabled, TruffleHog will solely rely on high-signal regular expressions to identify secrets.",
+        'trufflehog_path': "Path to your TruffleHog v3 binary. Must be set.",
         'allrepos': "Search all code repositories found. By default TruffleHog only searches those linked from the target website."
     }
+
+    # Bounds on untrusted tool output.
+    MAX_FINDINGS = 500
+    MAX_OUTPUT_BYTES = 20 * 1024 * 1024
 
     results = None
     errorState = False
@@ -59,6 +62,8 @@ class sfp_tool_trufflehog(SpiderFootPlugin):
         self.errorState = False
         self.__dataSource__ = "Target Website"
 
+        # Per-instance copy: never mutate the class-level defaults.
+        self.opts = dict(self.opts)
         for opt in userOpts.keys():
             self.opts[opt] = userOpts[opt]
 
@@ -140,56 +145,115 @@ class sfp_tool_trufflehog(SpiderFootPlugin):
 
         self.results[url] = True
 
-        args = [
-            exe,
-            '--json',
-            '--regex',
-        ]
-
-        if not self.opts['entropy']:
-            args.append("--entropy=False")
-        else:
-            args.append("--entropy=True")
-
-        # "--" marks end-of-options so the URL is always treated as a positional
-        # argument and never as a flag, even if validation above is ever loosened.
-        args.append("--")
-        args.append(url)
+        # --no-verification: never try discovered credentials against live
+        # third-party services. --no-update: never self-update a pinned binary.
+        # "--" marks end-of-options so the URL is always a positional argument.
+        args = [exe, 'git', '--json', '--no-update', '--no-verification', '--', url]
         try:
             p = Popen(args, stdout=PIPE, stderr=PIPE)
             out, _ = p.communicate(input=None, timeout=600)
-            stdout = out.decode(sys.stdin.encoding)
         except TimeoutExpired:
             p.kill()
-            stdout, stderr = p.communicate()
+            p.communicate()
             self.debug(f"Timed out waiting for trufflehog to finish on {url}")
             return
         except Exception as e:
             self.error(f"Unable to run trufflehog: {e}")
             return
 
-        if not stdout:
+        if not out:
             self.debug(f"trufflehog returned no output for {url}")
             return
 
+        stdout = out[:self.MAX_OUTPUT_BYTES].decode('utf-8', errors='replace')
+        findings = 0
         for row in stdout.split("\n"):
-            row = row.strip()
-            if len(row) == 0:
+            descr = self.describeFinding(row, url)
+            if descr is None:
                 continue
-            try:
-                rowjson = json.loads(row)
-            except BaseException as e:
-                self.error(f"Could not parse trufflehog output as JSON: {row}\nException: {e}")
-                continue
-
-            descr = "\n".join(
-                f"{k}: {rowjson[k]}"
-                for k in rowjson
-                if k not in ["diff", "printDiff"]
-            )
             evt = SpiderFootEvent('PASSWORD_COMPROMISED', descr, self.__name__, event)
             self.notifyListeners(evt)
+            findings += 1
+            if findings >= self.MAX_FINDINGS:
+                self.info(f"Stopping after {self.MAX_FINDINGS} trufflehog findings for {url}")
+                break
 
-        return
+    @staticmethod
+    def maskSecret(secret) -> str:
+        """Mask a secret, keeping only enough to recognise it.
+
+        Args:
+            secret (str): raw secret
+
+        Returns:
+            str: e.g. ``sk_l… [102 chars]``
+        """
+        if not isinstance(secret, str) or not secret:
+            return "[unknown]"
+        return f"{secret[:4]}\u2026 [{len(secret)} chars]"
+
+    @staticmethod
+    def _clean(value, limit: int = 300) -> str:
+        """Single-line, length-bounded text from untrusted tool output.
+
+        Args:
+            value: untrusted value
+            limit (int): maximum length
+
+        Returns:
+            str: cleaned text
+        """
+        if isinstance(value, bool) or not isinstance(value, (str, int)):
+            return ""
+        text = str(value).replace("\r", " ").replace("\n", " ").replace("<", "").replace(">", "")
+        return text[:limit]
+
+    def describeFinding(self, row: str, url: str):
+        """Turn one TruffleHog v3 JSON result line into event data.
+
+        Only structured location fields and a masked secret are kept. The raw
+        secret (Raw/RawV2/SecretParts), ExtraData (may embed credentials), the
+        commit author's email and local paths are deliberately discarded.
+
+        Args:
+            row (str): one line of trufflehog stdout
+            url (str): repository URL that was scanned
+
+        Returns:
+            str: event data, or None if the line is not a finding
+        """
+        row = row.strip()
+        if not row.startswith("{"):
+            return None
+        try:
+            rowjson = json.loads(row)
+        except ValueError:
+            self.debug("Skipping non-JSON trufflehog output line.")
+            return None
+        if not isinstance(rowjson, dict) or "DetectorName" not in rowjson:
+            return None  # log lines and other non-finding records
+
+        git = {}
+        meta = rowjson.get("SourceMetadata")
+        if isinstance(meta, dict) and isinstance(meta.get("Data"), dict) and isinstance(meta["Data"].get("Git"), dict):
+            git = meta["Data"]["Git"]
+
+        detector = self._clean(rowjson.get("DetectorName"), 80) or "Unknown"
+        verified = "verified" if rowjson.get("Verified") is True else "unverified"
+        lines = [
+            f"TruffleHog: {detector} secret ({verified})",
+            f"Repository: {url}",
+        ]
+        location = self._clean(git.get("file"))
+        if location:
+            line_no = git.get("line")
+            if isinstance(line_no, int) and not isinstance(line_no, bool):
+                location += f":{line_no}"
+            lines.append(f"File: {location}")
+        commit = self._clean(git.get("commit"), 64)
+        if commit:
+            lines.append(f"Commit: {commit}")
+        lines.append(f"Secret: {self.maskSecret(rowjson.get('Raw'))}")
+        return "\n".join(lines)
 
 # End of sfp_tool_trufflehog class

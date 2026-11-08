@@ -1,0 +1,12 @@
+# Python CLI tools bundled in Dockerfile.full. Installed into /opt/tools-venv,
+# separate from the application's hash-locked /opt/venv. (TruffleHog v3 and
+# Nuclei are Go binaries, downloaded with SHA-256 verification instead.)
+#
+# Regenerate the lock with Python 3.13 (the image's interpreter):
+#   pip-compile --allow-unsafe --generate-hashes --strip-extras \
+#     --output-file=docker/tools-requirements.lock docker/tools-requirements.in
+wafw00f==2.4.2
+dnstwist==20250130
+dnspython==2.9.2        # dnstwist -r (registered domains) needs DNS resolution
+snallygaster==0.0.15
+requests==2.34.2        # CMSeeK runtime dependency

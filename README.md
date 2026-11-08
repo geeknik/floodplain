@@ -106,6 +106,10 @@ There exists a comprehensive write-up and reference of the correlation rule-set 
 
 Also take a look at the [template.yaml](/correlations/template.yaml) file for a walk through. The existing [37 rules](/correlations) are also quite readable and good as starting points for additional rules.
 
+### SECURITY
+
+Found a vulnerability? Please report it privately via [GitHub's private vulnerability reporting](https://github.com/geeknik/floodplain/security/advisories/new) — not in a public issue. See [SECURITY.md](SECURITY.md) for details. There is no bug bounty.
+
 ### MODULES / INTEGRATIONS
 
 Floodplain has over 200 modules, most of which *don't require API keys*, and many of those that do require API keys *have a free tier*.
@@ -290,9 +294,8 @@ TLD Searcher|Search all Internet TLDs for domains with the same name as the targ
 [Tool - Retire.js](http://retirejs.github.io/retire.js/)|Scanner detecting the use of JavaScript libraries with known vulnerabilities|Tool
 [Tool - snallygaster](https://github.com/hannob/snallygaster)|Finds file leaks and other security problems on HTTP servers.|Tool
 [Tool - testssl.sh](https://testssl.sh)|Identify various TLS/SSL weaknesses, including Heartbleed, CRIME and ROBOT.|Tool
-[Tool - TruffleHog](https://github.com/trufflesecurity/truffleHog)|Searches through git repositories for high entropy strings and secrets, digging deep into commit history.|Tool
+[Tool - TruffleHog](https://github.com/trufflesecurity/trufflehog)|Searches through git repositories for high entropy strings and secrets, digging deep into commit history.|Tool
 [Tool - WAFW00F](https://github.com/EnableSecurity/wafw00f)|Identify what web application firewall (WAF) is in use on the specified website.|Tool
-[Tool - Wappalyzer](https://www.wappalyzer.com/)|Wappalyzer indentifies technologies on websites.|Tool
 [Tool - WhatWeb](https://github.com/urbanadventurer/whatweb)|Identify what software is in use on the specified website.|Tool
 [TOR Exit Nodes](https://metrics.torproject.org/)|Check if an IP adddress or netblock appears on the Tor Metrics exit node list.|Free API
 [TORCH](https://torchsearch.wordpress.com/)|Search Tor 'TORCH' search engine for mentions of the target domain.|Free API

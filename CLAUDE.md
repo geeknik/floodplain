@@ -74,7 +74,7 @@ pip-audit --strict -r requirements.lock        # full locked closure (hash-pinne
 - `websearch.py` — shared web-search providers (`BraveSearch`, `GoogleCustomSearch` until its 2027-01-01 shutdown) behind one `search(query, max_results)` interface; `providerFromOpts()` picks one from module options (one key option per provider), `hostMatches()` does subdomain-boundary URL checks. Use this instead of calling a search API from a module.
 - `logger.py` — multiprocessing-safe logging via a shared queue (`logListenerSetup`/`logWorkerSetup`); modules log through `self.debug/info/error`, which inject the `scanId`.
 
-### Modules (`modules/`, ~210 files, `sfp_*.py`)
+### Modules (`modules/`, ~209 files, `sfp_*.py`)
 Each module is a single file defining a class named identically to the file (`sfp_dnsresolve.py` → `class sfp_dnsresolve(SpiderFootPlugin)`). A module declares:
 - `meta` dict — `name`, `summary`, `flags`, `useCases` (`Footprint`/`Investigate`/`Passive`), `categories`, and (for API modules) `dataSource` with `apiKeyInstructions`.
 - `opts` / `optdescs` — user-configurable options and their descriptions.
@@ -83,7 +83,7 @@ Each module is a single file defining a class named identically to the file (`sf
 - `producedEvents()` — event types this module emits.
 - `handleEvent(self, event)` — core logic; calls `self.notifyListeners(SpiderFootEvent(...))` to emit results, and checks `self.checkForStop()` in loops.
 
-The scanner builds the module graph by matching `producedEvents`/`watchedEvents`. `sfp__stor_db` and `sfp__stor_stdout` (double underscore) are special storage sinks always appended to the module list. `sfp_template.py` is the scaffold for new modules and is intentionally excluded from loading. `sfp_tool_*` modules shell out to external binaries (nmap, whatweb, dnstwist, etc.) — always via list-form `Popen`, never `shell=True`.
+The scanner builds the module graph by matching `producedEvents`/`watchedEvents`. `sfp__stor_db` and `sfp__stor_stdout` (double underscore) are special storage sinks always appended to the module list. `sfp_template.py` is the scaffold for new modules and is intentionally excluded from loading. `sfp_tool_*` modules shell out to external binaries (nmap, whatweb, dnstwist, etc.) — always via list-form `Popen`, never `shell=True`, always with a `communicate(timeout=...)`, and tool output is parsed as untrusted input. `Dockerfile.full` bundles the tools: binaries are SHA-256-verified, git sources commit-verified, Python tools hash-locked in `docker/tools-requirements.lock` (compile with Python 3.13), and `docker/configure_tools.py` writes the tool paths on first start. Bumping a tool means updating its version **and** checksum/commit together.
 
 ### Correlation rules (`correlations/`, YAML)
 37 pre-defined rules plus `template.yaml`. A rule has `id`, `version`, `meta`, `collections` (what to pull from scan results), optional `aggregation`/`analysis`, and `headline` (how to present a match). `correlations/README.md` is the authoritative reference. Rules run automatically after each scan and can also be run standalone with `sf.py -C <scanID>`.

@@ -17,6 +17,7 @@ import sys
 import json
 from netaddr import IPNetwork
 from subprocess import Popen, PIPE, TimeoutExpired
+from urllib.parse import urlparse
 
 from floodplain import SpiderFootPlugin, SpiderFootEvent, SpiderFootHelpers
 
@@ -155,7 +156,10 @@ class sfp_tool_nuclei(SpiderFootPlugin):
             args = [
                 exe,
                 "-silent",
-                "-json",
+                "-jsonl",
+                "-omit-raw",
+                "-disable-update-check",
+                "-no-color",
                 "-concurrency",
                 "100",
                 "-retries",
@@ -164,9 +168,7 @@ class sfp_tool_nuclei(SpiderFootPlugin):
                 self.opts["template_path"],
                 "-no-interactsh",
                 "-etags",
-                "dos",
-                "fuzz",
-                "misc",
+                "dos,fuzz,misc",
             ]
             p = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE)
             try:
@@ -175,7 +177,7 @@ class sfp_tool_nuclei(SpiderFootPlugin):
                     content = stdout.decode(sys.stdout.encoding)
                 else:
                     self.error("Unable to read Nuclei content.")
-                    self.debug(f"Error running Nuclei: {stderr}, {stdout}")
+                    self.debug(f"Error running Nuclei: {stderr.decode('utf-8', errors='replace')[:2000]}")
                     return
             except TimeoutExpired:
                 p.kill()
@@ -189,53 +191,119 @@ class sfp_tool_nuclei(SpiderFootPlugin):
         if not content:
             return
 
-        try:
-            for line in content.split("\n"):
-                if not line:
-                    continue
-
+        findings = 0
+        for line in content.split("\n"):
+            if not line.strip():
+                continue
+            try:
                 data = json.loads(line)
-                srcevent = event
-                host = data['matched-at'].split(":")[0]
-                if host != eventData:
-                    if self.sf.validIP(host):
-                        srctype = "IP_ADDRESS"
-                    else:
-                        srctype = "INTERNET_NAME"
-                    srcevent = SpiderFootEvent(srctype, host, self.__name__, event)
-                    self.notifyListeners(srcevent)
+            except ValueError:
+                self.debug("Skipping non-JSON line in Nuclei output.")
+                continue
+            if not isinstance(data, dict) or not isinstance(data.get("info"), dict):
+                continue
 
-                matches = re.findall(r"CVE-\d{4}-\d{4,7}", line)
-                if matches:
-                    for cve in matches:
-                        etype, cvetext = self.sf.cveInfo(cve)
-                        e = SpiderFootEvent(
-                            etype, cvetext, self.__name__, srcevent
-                        )
-                        self.notifyListeners(e)
-                else:
-                    if "matcher-name" in data:
-                        etype = "VULNERABILITY_GENERAL"
-                        if data['info']['severity'] == "info":
-                            etype = "WEBSERVER_TECHNOLOGY"
+            findings += 1
+            if findings > self.MAX_FINDINGS:
+                self.info(f"Stopping after {self.MAX_FINDINGS} Nuclei findings for {eventData}")
+                break
 
-                        datatext = f"Template: {data['info']['name']}({data['template-id']})\n"
-                        datatext += f"Matcher: {data['matcher-name']}\n"
-                        datatext += f"Matched at: {data['matched-at']}\n"
-                        if data['info'].get('reference'):
-                            datatext += f"Reference: <SFURL>{data['info']['reference'][0]}</SFURL>"
+            srcevent = event
+            host = self.findingHost(data)
+            if host and host != eventData:
+                srctype = "IP_ADDRESS" if self.sf.validIP(host) else "INTERNET_NAME"
+                srcevent = SpiderFootEvent(srctype, host, self.__name__, event)
+                self.notifyListeners(srcevent)
 
-                        evt = SpiderFootEvent(
-                            etype,
-                            datatext,
-                            self.__name__,
-                            srcevent,
-                        )
-                        self.notifyListeners(evt)
-        except (KeyError, ValueError) as e:
-            self.error(f"Couldn't parse the JSON output of Nuclei: {e}")
-            self.error(f"Nuclei content: {content}")
-            return
+            # CVEs come only from the template's own classification. The old
+            # regex over the whole output line also matched the scanned
+            # target's HTTP response, so a hostile target could inject fake
+            # CVE findings.
+            cves = self.templateCves(data["info"])
+            for cve in cves:
+                etype, cvetext = self.sf.cveInfo(cve)
+                self.notifyListeners(SpiderFootEvent(etype, cvetext, self.__name__, srcevent))
+            if cves:
+                continue
+
+            etype = "WEBSERVER_TECHNOLOGY" if data["info"].get("severity") == "info" else "VULNERABILITY_GENERAL"
+            name = self._clean(data["info"].get("name"))
+            template_id = self._clean(data.get("template-id"))
+            datatext = f"Template: {name}({template_id})\n"
+            matcher = self._clean(data.get("matcher-name"))
+            if matcher:
+                datatext += f"Matcher: {matcher}\n"
+            datatext += f"Matched at: {self._clean(data.get('matched-at'), 500)}\n"
+            reference = data["info"].get("reference")
+            if isinstance(reference, list) and reference and isinstance(reference[0], str) \
+                    and reference[0].startswith(("http://", "https://")):
+                datatext += f"Reference: <SFURL>{self._clean(reference[0], 500)}</SFURL>"
+
+            self.notifyListeners(SpiderFootEvent(etype, datatext, self.__name__, srcevent))
+
+    MAX_FINDINGS = 1000
+
+    @staticmethod
+    def _clean(value, limit: int = 200) -> str:
+        """Single-line, markup-free, length-bounded text from tool output.
+
+        Args:
+            value: untrusted value
+            limit (int): maximum length
+
+        Returns:
+            str: cleaned text
+        """
+        if not isinstance(value, str):
+            return ""
+        return value.replace("\r", " ").replace("\n", " ").replace("<", "").replace(">", "")[:limit]
+
+    @staticmethod
+    def templateCves(info: dict) -> list:
+        """CVE IDs declared by the matching template.
+
+        Args:
+            info (dict): the finding's ``info`` block
+
+        Returns:
+            list: upper-cased, de-duplicated CVE IDs
+        """
+        classification = info.get("classification")
+        if not isinstance(classification, dict):
+            return []
+        ids = classification.get("cve-id")
+        if isinstance(ids, str):
+            ids = [ids]
+        if not isinstance(ids, list):
+            return []
+        out = []
+        for cve in ids:
+            if isinstance(cve, str) and re.fullmatch(r"CVE-\d{4}-\d{4,7}", cve.upper()) and cve.upper() not in out:
+                out.append(cve.upper())
+        return out
+
+    def findingHost(self, data: dict):
+        """Host a finding was matched on, validated.
+
+        Args:
+            data (dict): Nuclei v3 JSONL finding
+
+        Returns:
+            str: hostname or IP address, or None
+        """
+        host = data.get("host")
+        if not isinstance(host, str) or not host:
+            host = data.get("matched-at") if isinstance(data.get("matched-at"), str) else ""
+        if "://" in host:
+            host = urlparse(host).hostname or ""
+        elif host.count(":") == 1:
+            host = host.split(":")[0]
+        host = host.strip("[]").lower().rstrip(".")
+        if self.sf.validIP(host) or self.sf.validIP6(host):
+            return host
+        if SpiderFootHelpers.sanitiseInput(host):
+            return host
+        return None
 
 
 # End of sfp_tool_nuclei class

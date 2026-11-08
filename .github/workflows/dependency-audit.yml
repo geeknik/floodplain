@@ -12,6 +12,7 @@ on:
       - requirements.lock
       - test/requirements.txt
       - test/acceptance/requirements.txt
+      - docker/tools-requirements.lock
       - .github/workflows/dependency-audit.yml
   pull_request:
     branches: [master]
@@ -20,6 +21,7 @@ on:
       - requirements.lock
       - test/requirements.txt
       - test/acceptance/requirements.txt
+      - docker/tools-requirements.lock
       - .github/workflows/dependency-audit.yml
   schedule:
     # Mondays 07:00 UTC — catch CVEs disclosed against pinned versions.
@@ -59,3 +61,6 @@ jobs:
         run: |
           pip-audit --strict --progress-spinner off --vulnerability-service osv -r test/requirements.txt
           pip-audit --strict --progress-spinner off --vulnerability-service osv -r test/acceptance/requirements.txt
+
+      - name: Audit Docker tool bundle against OSV (docker/tools-requirements.lock)
+        run: pip-audit --strict --progress-spinner off --vulnerability-service osv -r docker/tools-requirements.lock

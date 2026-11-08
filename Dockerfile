@@ -37,8 +37,10 @@
 # Python 3.11+ is required. Both stages use the same official Python image so
 # the virtualenv built in the first stage runs unchanged in the second.
 
-FROM python:3.13-alpine3.24 AS build
+FROM python:3.13-alpine3.24@sha256:1e1f6334529d1fb26a2ef619d7cffb30a7c7d7cc1cc7338ebee283a58d1aeaca AS build
 ARG REQUIREMENTS=requirements.txt
+# Alpine packages track the digest-pinned base; exact apk pins break rebuilds.
+# hadolint ignore=DL3018
 RUN apk add --no-cache gcc musl-dev swig tinyxml-dev openssl-dev libffi-dev \
  libxslt-dev libxml2-dev jpeg-dev openjpeg-dev zlib-dev cargo rust
 RUN python -m venv /opt/venv
@@ -52,7 +54,7 @@ RUN pip install --no-cache-dir --require-hashes -r requirements.lock
 RUN if [ "$REQUIREMENTS" != "requirements.txt" ]; then pip install --no-cache-dir -r "$REQUIREMENTS"; fi
 
 
-FROM python:3.13-alpine3.24
+FROM python:3.13-alpine3.24@sha256:1e1f6334529d1fb26a2ef619d7cffb30a7c7d7cc1cc7338ebee283a58d1aeaca
 WORKDIR /home/floodplain
 
 # Place database and logs outside installation directory
@@ -61,6 +63,7 @@ ENV FLOODPLAIN_LOGS /var/lib/floodplain/log
 ENV FLOODPLAIN_CACHE /var/lib/floodplain/cache
 
 # Run everything as one command so that only one layer is created
+# hadolint ignore=DL3018
 RUN apk --update --no-cache add libxslt tinyxml libxml2 jpeg zlib openjpeg \
     && addgroup floodplain \
     && adduser -G floodplain -h /home/floodplain -s /sbin/nologin \
@@ -79,6 +82,7 @@ COPY . .
 COPY --from=build /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# hadolint ignore=DL3066
 USER floodplain
 
 EXPOSE 5001
