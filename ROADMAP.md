@@ -69,6 +69,18 @@ The two biggest liabilities are (a) **dependencies pinned below patched majors**
 
 ---
 
+### Accepted risk: Bootstrap 3.4.1 (web UI) — reviewed 2026-11-07
+
+`floodplain/static/node_modules/bootstrap` is 3.4.1 (EOL). It carries two moderate XSS
+advisories with no 3.x fix: GHSA-vxmc-5x29-h64v (carousel `data-*` attributes) and
+GHSA-q58r-hwc8-rm9j (button `data-loading-text`). Neither sink is reachable: the UI uses
+no carousel and no button loading state; scan data reaches one tooltip only after
+`sf.escapeHTML()` and tooltips render as text; the single HTML popover shows module
+API-key instructions from code, and 3.4.1's built-in tooltip/popover sanitizer applies.
+**Remediation:** migrate the UI to Bootstrap 5 (glyphicons, navbar, modal and grid
+markup all change) — tracked as its own task. Re-check this note whenever a template
+or `floodplain*.js` adds Bootstrap `data-*` attributes fed by scan data.
+
 ## 3. Phase 1 — Foundation: CI, baseline, rebrand decision
 
 ### 3.1 CI is using sunset tooling

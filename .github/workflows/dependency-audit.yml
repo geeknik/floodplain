@@ -11,6 +11,7 @@ on:
       - requirements.txt
       - requirements.lock
       - test/requirements.txt
+      - test/acceptance/requirements.txt
       - .github/workflows/dependency-audit.yml
   pull_request:
     branches: [master]
@@ -18,6 +19,7 @@ on:
       - requirements.txt
       - requirements.lock
       - test/requirements.txt
+      - test/acceptance/requirements.txt
       - .github/workflows/dependency-audit.yml
   schedule:
     # Mondays 07:00 UTC — catch CVEs disclosed against pinned versions.
@@ -47,3 +49,13 @@ jobs:
 
       - name: Audit locked dependency closure (requirements.lock)
         run: pip-audit --strict --progress-spinner off -r requirements.lock
+
+      # The PyPI advisory feed can lag GitHub's advisory database (which
+      # Dependabot uses); OSV includes GitHub advisories, so check it too.
+      - name: Audit locked dependency closure against OSV
+        run: pip-audit --strict --progress-spinner off --vulnerability-service osv -r requirements.lock
+
+      - name: Audit test tooling against OSV
+        run: |
+          pip-audit --strict --progress-spinner off --vulnerability-service osv -r test/requirements.txt
+          pip-audit --strict --progress-spinner off --vulnerability-service osv -r test/acceptance/requirements.txt
