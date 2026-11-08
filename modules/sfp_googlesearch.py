@@ -12,8 +12,8 @@
 
 import json
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
-from spiderfoot.websearch import GoogleCustomSearch, WebSearchFatal, hostMatches
+from floodplain import SpiderFootEvent, SpiderFootPlugin
+from floodplain.websearch import GoogleCustomSearch, WebSearchFatal, hostMatches
 
 
 class sfp_googlesearch(SpiderFootPlugin):

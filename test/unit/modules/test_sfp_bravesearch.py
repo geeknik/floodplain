@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from modules.sfp_bravesearch import sfp_bravesearch
 from sflib import SpiderFoot
-from spiderfoot import SpiderFootEvent, SpiderFootTarget
+from floodplain import SpiderFootEvent, SpiderFootTarget
 
 
 def brave_page(urls, more=False):

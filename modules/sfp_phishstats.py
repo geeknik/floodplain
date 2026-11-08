@@ -17,7 +17,7 @@ import urllib.parse
 
 from netaddr import IPAddress, IPNetwork
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootPlugin
 
 
 class sfp_phishstats(SpiderFootPlugin):

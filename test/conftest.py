@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from spiderfoot import SpiderFootHelpers
+from floodplain import SpiderFootHelpers
 
 
 @pytest.fixture(autouse=True)

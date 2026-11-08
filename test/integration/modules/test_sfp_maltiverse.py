@@ -3,7 +3,7 @@ import unittest
 
 from modules.sfp_maltiverse import sfp_maltiverse
 from sflib import SpiderFoot
-from spiderfoot import SpiderFootEvent, SpiderFootTarget
+from floodplain import SpiderFootEvent, SpiderFootTarget
 
 
 @pytest.mark.usefixtures

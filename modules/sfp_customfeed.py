@@ -15,7 +15,7 @@ import re
 
 from netaddr import IPAddress, IPNetwork
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootPlugin
 
 malchecks = {
     'Custom Threat Data': {

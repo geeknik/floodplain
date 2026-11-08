@@ -20,7 +20,7 @@ import urllib.request
 
 from netaddr import IPNetwork
 
-from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_hackertarget(SpiderFootPlugin):

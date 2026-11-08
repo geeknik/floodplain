@@ -15,7 +15,7 @@ import hashlib
 import json
 import time
 
-from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_gravatar(SpiderFootPlugin):

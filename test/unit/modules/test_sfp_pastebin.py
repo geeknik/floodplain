@@ -3,7 +3,7 @@ import unittest
 
 from modules.sfp_pastebin import sfp_pastebin
 from sflib import SpiderFoot
-from spiderfoot import SpiderFootEvent, SpiderFootTarget
+from floodplain import SpiderFootEvent, SpiderFootTarget
 
 
 @pytest.mark.usefixtures
@@ -53,7 +53,7 @@ class TestModulePastebin(unittest.TestCase):
 class TestModulePastebinBehaviour(unittest.TestCase):
 
     def _module(self, **opts):
-        from spiderfoot import SpiderFootTarget
+        from floodplain import SpiderFootTarget
         base = {'brave_api_key': 'brave-key', 'api_key': '', 'cse_id': '', 'max_results': 20, '_fetchtimeout': 5}
         base.update(opts)
         module = sfp_pastebin()
@@ -63,7 +63,7 @@ class TestModulePastebinBehaviour(unittest.TestCase):
 
     def _run(self, module, data, responses):
         from unittest.mock import patch
-        from spiderfoot import SpiderFootEvent
+        from floodplain import SpiderFootEvent
         root = SpiderFootEvent('ROOT', 'example.com', '', '')
         evt = SpiderFootEvent('EMAILADDR', data, 'test', root)
         emitted = []

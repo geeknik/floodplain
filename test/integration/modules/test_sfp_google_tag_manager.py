@@ -3,7 +3,7 @@ import unittest
 
 from modules.sfp_google_tag_manager import sfp_google_tag_manager
 from sflib import SpiderFoot
-from spiderfoot import SpiderFootEvent, SpiderFootTarget
+from floodplain import SpiderFootEvent, SpiderFootTarget
 
 
 @pytest.mark.usefixtures

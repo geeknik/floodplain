@@ -15,7 +15,7 @@ import json
 import re
 import time
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootPlugin
 
 
 class sfp_circllu(SpiderFootPlugin):

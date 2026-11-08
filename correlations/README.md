@@ -189,4 +189,4 @@ If we were to look at `This is some web content: foo` in our rule, here are the 
 
 Notice how the `entity.type` and `entity.data` fields for "This is some web content: foo" is **not** the `LINKED_URL_INTERNAL` data element, but actually the `bar` `INTERNET_NAME` data element. This is because an `INTERNET_NAME` is an entity, but a `LINKED_URL_INTERNAL` is not.
 
-You can look in `spiderfoot/db.py` to see which data types are entities and which are not.
+You can look in `floodplain/db.py` to see which data types are entities and which are not.

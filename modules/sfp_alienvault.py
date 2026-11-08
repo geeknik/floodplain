@@ -19,7 +19,7 @@ from datetime import datetime
 
 from netaddr import IPNetwork
 
-from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_alienvault(SpiderFootPlugin):

@@ -65,7 +65,8 @@ Classify the 209 `spiderfoot.net` + 4 github + 2 User-Agent refs into **(a)** do
 - Update the legacy-file guards in `sf.py:617-632` accordingly.
 - New unit tests for the resolution precedence (this is fail-closed logic worth covering).
 
-### Tier 3 — Package rename `spiderfoot/` → `floodplain/` (high churn, mechanical) — ~1 day
+### Tier 3 — Package rename `spiderfoot/` → `floodplain/` (high churn, mechanical) — DONE 2026-11-07
+- **Status:** shipped. Package, `test/unit/floodplain/`, `docs/floodplain.rst`, resource paths (`floodplain.dicts`), logger names (`floodplain.*`), template/static paths, and static asset names (`floodplain.js/.css`) renamed. The SpiderFoot logo/wordmark/favicon in the web UI were replaced with an original Floodplain mark. `spiderfoot/` is now a deprecated shim aliasing every submodule via `sys.modules` (identity-preserving; `test/unit/test_spiderfoot_compat_shim.py`). A `floodplain.py` entrypoint was **not** added: a top-level `floodplain.py` next to the `floodplain/` package is ambiguous to import; `sf.py` stays the entrypoint.
 - Automated codemod over the 566 imports + `resources.open_text('spiderfoot.…')` + logger-name strings + the static `tools.staticdir.root` in `sf.py:493`.
 - Land as **one atomic commit**; full unit suite must be green.
 - **Recommended:** ship a thin `spiderfoot/__init__.py` shim that re-exports from `floodplain` for one or two releases so external/private modules don't break immediately.

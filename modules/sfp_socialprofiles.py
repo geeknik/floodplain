@@ -14,8 +14,8 @@ import json
 import re
 import urllib.parse
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
-from spiderfoot.websearch import BraveSearch, GoogleCustomSearch, WebSearchFatal, hostMatches
+from floodplain import SpiderFootEvent, SpiderFootPlugin
+from floodplain.websearch import BraveSearch, GoogleCustomSearch, WebSearchFatal, hostMatches
 
 # Site name -> (search query template, profile domain, profile URL patterns).
 # Queries are URL-encoded by the search provider; patterns run against result

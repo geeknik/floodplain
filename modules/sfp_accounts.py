@@ -18,7 +18,7 @@ import time
 from queue import Empty as QueueEmpty
 from queue import Queue
 
-from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_accounts(SpiderFootPlugin):

@@ -15,7 +15,7 @@ replace.
 import os
 import unittest
 
-from spiderfoot import SpiderFootHelpers
+from floodplain import SpiderFootHelpers
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 SECTION = "### MODULES / INTEGRATIONS"

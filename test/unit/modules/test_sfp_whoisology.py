@@ -3,7 +3,7 @@ import unittest
 
 from modules.sfp_whoisology import sfp_whoisology
 from sflib import SpiderFoot
-from spiderfoot import SpiderFootEvent, SpiderFootTarget
+from floodplain import SpiderFootEvent, SpiderFootTarget
 
 
 @pytest.mark.usefixtures

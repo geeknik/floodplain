@@ -31,7 +31,7 @@ class TestModuleEmailrepBehaviour(unittest.TestCase):
 
     def _module(self, key='emailrep-key'):
         from sflib import SpiderFoot
-        from spiderfoot import SpiderFootTarget
+        from floodplain import SpiderFootTarget
         module = sfp_emailrep()
         module.setup(SpiderFoot(self.default_options), {'api_key': key, '_fetchtimeout': 5})
         module.setTarget(SpiderFootTarget('example.com', 'INTERNET_NAME'))
@@ -39,7 +39,7 @@ class TestModuleEmailrepBehaviour(unittest.TestCase):
 
     def _run(self, module, data, response):
         from unittest.mock import patch
-        from spiderfoot import SpiderFootEvent
+        from floodplain import SpiderFootEvent
         root = SpiderFootEvent('ROOT', 'example.com', '', '')
         evt = SpiderFootEvent('EMAILADDR', data, 'test', root)
         emitted = []

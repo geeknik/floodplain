@@ -17,7 +17,7 @@ import os
 from subprocess import PIPE, Popen, TimeoutExpired
 from urllib.parse import urlparse
 
-from spiderfoot import SpiderFootPlugin, SpiderFootEvent
+from floodplain import SpiderFootPlugin, SpiderFootEvent
 
 
 class sfp_tool_trufflehog(SpiderFootPlugin):

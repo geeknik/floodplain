@@ -16,7 +16,7 @@ import json
 import time
 from urllib.parse import urlparse
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootPlugin
 
 
 class sfp_intelx(SpiderFootPlugin):

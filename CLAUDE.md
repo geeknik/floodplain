@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Floodplain is a fork of **SpiderFoot 4.0** — an OSINT (open source intelligence) automation tool. It runs 200+ pluggable collection modules in a publisher/subscriber pipeline against a target (domain, IP, email, phone, username, bitcoin address, etc.), stores findings in SQLite, and applies a YAML-driven correlation engine. It exposes both a CherryPy web UI and a CLI.
 
-Versioning restarted at `0.0.1` (SemVer pre-1.0; bump `VERSION`, `spiderfoot/__version__.py`, `sfcli.py` and the README badge together — `test/unit/test_version_consistency.py` enforces it). The rebrand from "SpiderFoot" to "Floodplain" is **only partially done**: `VERSION` reads `Floodplain 0.0.1` and `sf.py` prints the Floodplain name, but the Python package is still `spiderfoot/`, modules still use the `sfp_` prefix, entrypoints are still `sf*.py`, and ~5000 `spiderfoot` string references remain across the tree. Do not assume a name is wrong just because it says "spiderfoot" — that is the current expected state. See `ROADMAP.md` for the planned migration order.
+Versioning restarted at `0.0.1` (SemVer pre-1.0; bump `VERSION`, `floodplain/__version__.py`, `sfcli.py` and the README badge together — `test/unit/test_version_consistency.py` enforces it). The core package is `floodplain/` (renamed from `spiderfoot/` in Tier 3 of `REBRAND.md`). A deprecated `spiderfoot/` shim aliases it (same objects, `DeprecationWarning`) so third-party modules doing `from spiderfoot import ...` keep working — new code must import from `floodplain`. Deliberately **not** renamed: the `SpiderFoot*` class names and the `sfp_` module prefix (Tier 4, declined), the `sf*.py` entrypoints, and legacy data names (`~/.spiderfoot`, `spiderfoot.db`, `SPIDERFOOT_*` env vars) which are honoured for existing installs. Do not "fix" those. See `REBRAND.md`.
 
 ## Commands
 
@@ -35,7 +35,7 @@ python3 -m flake8 . --count --show-source --statistics
 python3 -m pytest test/unit -n auto --dist loadfile --cov=. .
 
 # A single test file / test / parametrized case
-python3 -m pytest test/unit/spiderfoot/test_spiderfootevent.py
+python3 -m pytest test/unit/floodplain/test_spiderfootevent.py
 python3 -m pytest test/unit/modules/test_sfp_dnsresolve.py::TestModuleDnsresolve::test_handleEvent
 python3 -m pytest -k "watchedEvents"
 
@@ -58,12 +58,12 @@ pip-audit --strict -r requirements.lock        # full locked closure (hash-pinne
 
 ### Entry points (repo root)
 - `sf.py` — main launcher. Loads all modules + correlation rules into `sfConfig`, then either starts the web server (`-l`), runs a CLI scan (`-s`), or runs correlations against an existing scan (`-C`). A CLI scan spawns `startSpiderFootScanner` in a separate `multiprocessing.Process` and polls the DB for completion.
-- `sfwebui.py` — CherryPy web application (`SpiderFootWebUi`). Serves the UI and a JSON API; templates in `spiderfoot/templates/` (Mako), static assets in `spiderfoot/static/`.
+- `sfwebui.py` — CherryPy web application (`SpiderFootWebUi`). Serves the UI and a JSON API; templates in `floodplain/templates/` (Mako), static assets in `floodplain/static/` (`floodplain.js/.css`, `img/floodplain-*.png`).
 - `sfcli.py` — interactive remote CLI client that talks to a running web server's API.
 - `sflib.py` — the `SpiderFoot` utility class: HTTP fetching, DNS, target/type detection, module dependency resolution (`modulesProducing`/`modulesConsuming`/`eventsToModules`), config serialize/unserialize. Passed to every module as `self.sf`.
 - `sfscan.py` — `SpiderFootScanner`: instantiates the selected modules, wires the event pipeline, drives a scan to completion, runs post-scan correlations.
 
-### The `spiderfoot/` package (core engine)
+### The `floodplain/` package (core engine)
 - `plugin.py` — `SpiderFootPlugin`, the base class every module extends. Defines the event model: `watchedEvents()`, `producedEvents()`, `handleEvent()`, `notifyListeners()`, `registerListener()`, `checkForStop()`, and `threadWorker()`. Modules communicate **only** via events; a module never calls another module directly.
 - `event.py` — `SpiderFootEvent`: the unit of data passed between modules (`eventType`, `data`, `module`, `sourceEvent`). Events form a parent chain back to the synthetic `ROOT` event; `notifyListeners` walks this chain to suppress duplicate cascades (`storeOnly`).
 - `db.py` — `SpiderFootDb`: all SQLite access (scan instances, events, config, correlations). New event types go in `eventDetails`; existing databases pick them up automatically on open (`INSERT OR IGNORE`). The DB lives at `<dataPath>/floodplain.db` (or a pre-existing `spiderfoot.db`; NOT in the app dir — `sf.py` hard-errors if `floodplain.db`/`spiderfoot.db`/`passwd` is found in the working directory).
@@ -89,7 +89,7 @@ The scanner builds the module graph by matching `producedEvents`/`watchedEvents`
 37 pre-defined rules plus `template.yaml`. A rule has `id`, `version`, `meta`, `collections` (what to pull from scan results), optional `aggregation`/`analysis`, and `headline` (how to present a match). `correlations/README.md` is the authoritative reference. Rules run automatically after each scan and can also be run standalone with `sf.py -C <scanID>`.
 
 ### Tests (`test/`)
-- `test/unit/` — deterministic, network-free; mirrors source layout (`test/unit/spiderfoot/`, `test/unit/modules/` with one `test_sfp_*.py` per module). This is the suite that gates merges.
+- `test/unit/` — deterministic, network-free; mirrors source layout (`test/unit/floodplain/`, `test/unit/modules/` with one `test_sfp_*.py` per module). This is the suite that gates merges.
 - `test/integration/` — heavier; `test/integration/modules/` hits live third-party services and is excluded from PR runs (most self-skip without API keys).
 - `test/acceptance/` — Robot Framework browser tests against a running web server on port 5001.
 - `test/conftest.py` — provides `default_options` / `web_default_options` / `cli_default_options` fixtures; tests use a separate `spiderfoot.test.db`.

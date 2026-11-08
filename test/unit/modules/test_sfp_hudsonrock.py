@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from modules.sfp_hudsonrock import sfp_hudsonrock
 from sflib import SpiderFoot
-from spiderfoot import SpiderFootEvent, SpiderFootTarget
+from floodplain import SpiderFootEvent, SpiderFootTarget
 
 
 SECRET_PASSWORD = "Hunter2-SuperSecret!"

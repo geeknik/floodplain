@@ -3,7 +3,7 @@ import unittest
 
 from modules.sfp__stor_db import sfp__stor_db
 from sflib import SpiderFoot
-from spiderfoot import SpiderFootEvent, SpiderFootTarget
+from floodplain import SpiderFootEvent, SpiderFootTarget
 
 
 @pytest.mark.usefixtures

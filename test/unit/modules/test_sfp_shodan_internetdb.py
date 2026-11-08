@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from modules.sfp_shodan_internetdb import sfp_shodan_internetdb
 from sflib import SpiderFoot
-from spiderfoot import SpiderFootEvent, SpiderFootTarget
+from floodplain import SpiderFootEvent, SpiderFootTarget
 
 
 SAMPLE = {

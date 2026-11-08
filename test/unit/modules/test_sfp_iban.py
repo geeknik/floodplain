@@ -3,7 +3,7 @@ import unittest
 
 from modules.sfp_iban import sfp_iban
 from sflib import SpiderFoot
-from spiderfoot import SpiderFootEvent, SpiderFootTarget
+from floodplain import SpiderFootEvent, SpiderFootTarget
 
 
 @pytest.mark.usefixtures

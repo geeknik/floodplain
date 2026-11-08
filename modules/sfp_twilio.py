@@ -13,7 +13,7 @@
 import base64
 import json
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootPlugin
 
 
 class sfp_twilio(SpiderFootPlugin):

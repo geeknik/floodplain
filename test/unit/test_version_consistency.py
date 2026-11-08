@@ -5,7 +5,7 @@ import re
 import unittest
 
 from sfcli import SpiderFootCli
-from spiderfoot import __version__
+from floodplain import __version__
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 

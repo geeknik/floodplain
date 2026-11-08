@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from modules.sfp_chainabuse import sfp_chainabuse
 from sflib import SpiderFoot
-from spiderfoot import SpiderFootEvent, SpiderFootTarget
+from floodplain import SpiderFootEvent, SpiderFootTarget
 
 ADDR = "12QeMLzSrB8XH8FvEzPMVoRxVAzTr5XM2y"
 KEY = "chainabuse-secret-key"

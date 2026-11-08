@@ -26,7 +26,7 @@ import base64
 import json
 import re
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootPlugin
 
 ADDRESS_RE = re.compile(r'^[A-Za-z0-9]{20,100}$')
 ETH_ADDRESS_RE = re.compile(r'^0x[0-9a-fA-F]{40}$')

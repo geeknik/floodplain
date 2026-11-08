@@ -15,7 +15,7 @@ import re
 import time
 import urllib.parse
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootPlugin
 
 SHA256_RE = re.compile(r'^[0-9a-f]{64}$')
 SEGMENT_RE = re.compile(r'^[A-Za-z0-9_]{1,100}$')

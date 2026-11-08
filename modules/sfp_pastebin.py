@@ -13,8 +13,8 @@
 
 import re
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
-from spiderfoot.websearch import WebSearchFatal, hostMatches, providerFromOpts
+from floodplain import SpiderFootEvent, SpiderFootPlugin
+from floodplain.websearch import WebSearchFatal, hostMatches, providerFromOpts
 
 
 class sfp_pastebin(SpiderFootPlugin):

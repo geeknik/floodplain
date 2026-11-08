@@ -3,7 +3,7 @@ import unittest
 
 from modules.sfp_comodo import sfp_comodo
 from sflib import SpiderFoot
-from spiderfoot import SpiderFootEvent, SpiderFootTarget
+from floodplain import SpiderFootEvent, SpiderFootTarget
 
 
 @pytest.mark.usefixtures

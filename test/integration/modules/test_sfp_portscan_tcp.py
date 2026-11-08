@@ -3,7 +3,7 @@ import unittest
 
 from modules.sfp_portscan_tcp import sfp_portscan_tcp
 from sflib import SpiderFoot
-from spiderfoot import SpiderFootEvent, SpiderFootTarget
+from floodplain import SpiderFootEvent, SpiderFootTarget
 
 
 @pytest.mark.usefixtures

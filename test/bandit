@@ -4,4 +4,4 @@
 # Must be run from the Floodplain root directory; ie:
 # ./test/bandit
 
-python3 -m bandit *.py spiderfoot/* modules/*.py
+python3 -m bandit *.py floodplain/* modules/*.py

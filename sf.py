@@ -33,11 +33,11 @@ from cherrypy.lib import auth_digest
 from sflib import SpiderFoot
 from sfscan import startSpiderFootScanner
 from sfwebui import SpiderFootWebUi
-from spiderfoot import SpiderFootHelpers
-from spiderfoot import SpiderFootDb
-from spiderfoot import SpiderFootCorrelator
-from spiderfoot.logger import logListenerSetup, logWorkerSetup
-from spiderfoot import __version__
+from floodplain import SpiderFootHelpers
+from floodplain import SpiderFootDb
+from floodplain import SpiderFootCorrelator
+from floodplain.logger import logListenerSetup, logWorkerSetup
+from floodplain import __version__
 
 scanId = None
 dbh = None
@@ -150,7 +150,7 @@ def main() -> None:
     loggingQueue = mp.Queue()
     logListenerSetup(loggingQueue, sfConfig)
     logWorkerSetup(loggingQueue)
-    log = logging.getLogger(f"spiderfoot.{__name__}")
+    log = logging.getLogger(f"floodplain.{__name__}")
 
     if SpiderFootHelpers.envPath('DATA') is None and SpiderFootHelpers.homeDataPath()[1]:
         log.info(f"Using legacy data directory {SpiderFootHelpers.dataPath()}. "
@@ -218,7 +218,7 @@ def main() -> None:
         sys.exit(0)
 
     if args.triage:
-        from spiderfoot import CorrelationTriage
+        from floodplain import CorrelationTriage
         triage = CorrelationTriage(dbh, sfConfig)
         if not triage.is_enabled():
             log.error("AI triage is not configured. Set _llm_enabled and an OpenRouter key "
@@ -278,7 +278,7 @@ def start_scan(sfConfig: dict, sfModules: dict, args, loggingQueue) -> None:
         args (argparse.Namespace): command line args
         loggingQueue (Queue): main Floodplain logging queue
     """
-    log = logging.getLogger(f"spiderfoot.{__name__}")
+    log = logging.getLogger(f"floodplain.{__name__}")
 
     global dbh
     global scanId
@@ -503,7 +503,7 @@ def start_web_server(sfWebUiConfig: dict, sfConfig: dict, loggingQueue=None) -> 
         sfConfig (dict): Floodplain config options
         loggingQueue (Queue): main Floodplain logging queue
     """
-    log = logging.getLogger(f"spiderfoot.{__name__}")
+    log = logging.getLogger(f"floodplain.{__name__}")
 
     web_host = sfWebUiConfig.get('host', '127.0.0.1')
     web_port = sfWebUiConfig.get('port', 5001)
@@ -527,7 +527,7 @@ def start_web_server(sfWebUiConfig: dict, sfConfig: dict, loggingQueue=None) -> 
         '/static': {
             'tools.staticdir.on': True,
             'tools.staticdir.dir': 'static',
-            'tools.staticdir.root': f"{os.path.dirname(os.path.abspath(__file__))}/spiderfoot"
+            'tools.staticdir.root': f"{os.path.dirname(os.path.abspath(__file__))}/floodplain"
         }
     }
 
@@ -630,7 +630,7 @@ def handle_abort(signal, frame) -> None:
         signal: TBD
         frame: TBD
     """
-    log = logging.getLogger(f"spiderfoot.{__name__}")
+    log = logging.getLogger(f"floodplain.{__name__}")
 
     global dbh
     global scanId

@@ -12,7 +12,7 @@
 
 import json
 
-from spiderfoot import SpiderFootPlugin
+from floodplain import SpiderFootPlugin
 
 
 class sfp__stor_stdout(SpiderFootPlugin):

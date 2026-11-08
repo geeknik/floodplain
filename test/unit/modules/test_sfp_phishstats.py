@@ -32,7 +32,7 @@ class TestModulePhishstatsBehaviour(unittest.TestCase):
     RECORD = '[{"id": 1, "ip": "93.184.216.34", "url": "http://bad.example/login", "score": 7}]'
 
     def _module(self, **opts):
-        from spiderfoot import SpiderFootTarget
+        from floodplain import SpiderFootTarget
         module = sfp_phishstats()
         base = {'api_key': '', 'checkaffiliates': True, 'netblocklookup': True, 'maxnetblock': 24,
                 'subnetlookup': True, 'maxsubnet': 24}
@@ -43,7 +43,7 @@ class TestModulePhishstatsBehaviour(unittest.TestCase):
 
     def _run(self, module, etype, data, responses):
         from unittest.mock import patch
-        from spiderfoot import SpiderFootEvent
+        from floodplain import SpiderFootEvent
         root = SpiderFootEvent('ROOT', 'example.com', '', '')
         evt = SpiderFootEvent(etype, data, 'test', root)
         emitted = []

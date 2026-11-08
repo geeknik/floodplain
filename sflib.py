@@ -35,7 +35,7 @@ import OpenSSL
 import requests
 import urllib3
 from publicsuffixlist import PublicSuffixList
-from spiderfoot import SpiderFootHelpers
+from floodplain import SpiderFootHelpers
 
 # For hiding the SSL warnings coming from the requests lib
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)  # noqa: DUO131
@@ -68,7 +68,7 @@ class SpiderFoot:
             raise TypeError(f"options is {type(options)}; expected dict()")
 
         self.opts = deepcopy(options)
-        self.log = logging.getLogger(f"spiderfoot.{__name__}")
+        self.log = logging.getLogger(f"floodplain.{__name__}")
 
         # This is ugly but we don't want any fetches to fail - we expect
         # to encounter unverified SSL certs!

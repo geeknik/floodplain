@@ -10,7 +10,7 @@ Welcome to Floodplain's documentation!
    :maxdepth: 4
    :caption: Contents:
 
-   spiderfoot
+   floodplain
 
 
 Indices and tables

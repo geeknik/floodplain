@@ -11,7 +11,7 @@
 # Licence:     MIT
 # -------------------------------------------------------------------------------
 
-from spiderfoot import SpiderFootPlugin
+from floodplain import SpiderFootPlugin
 
 
 class sfp__stor_db(SpiderFootPlugin):

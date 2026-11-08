@@ -93,12 +93,12 @@ from git history if a service returns.
 | Module | Status | Deadline |
 |---|---|---|
 | `sfp_googlesearch` | Google Custom Search JSON API closed to new customers. **Successor `sfp_bravesearch` added 2026-11-07.** Delete this module after the cutoff. | **2027-01-01** ([Google](https://developers.google.com/custom-search/v1/overview)) |
-| `sfp_pastebin` | **Migrated 2026-11-07** to the shared `spiderfoot.websearch` interface: Brave (`brave_api_key`) preferred, legacy Google key honoured until the cutoff. | **2027-01-01** (Google path only) |
+| `sfp_pastebin` | **Migrated 2026-11-07** to the shared `floodplain.websearch` interface: Brave (`brave_api_key`) preferred, legacy Google key honoured until the cutoff. | **2027-01-01** (Google path only) |
 | `sfp_socialprofiles` | **Migrated 2026-11-07**: `method` defaults to `brave`; dead Bing path and dead Google+ site removed. | **2027-01-01** (Google path only) |
 | `sfp_clearbit` | No new Clearbit subscriptions or free accounts (HubSpot) | No date; unusable for new users ([Clearbit](https://help.clearbit.com/hc/en-us/articles/20717192156695-How-Can-I-Buy-Clearbit)) |
 | `sfp_cybercrimetracker` | Feed still served but last entry 2023-12-30 | Stale |
 
-**Done 2026-11-07:** `spiderfoot/websearch.py` provides one provider
+**Done 2026-11-07:** `floodplain/websearch.py` provides one provider
 interface (Brave Search; Google Custom Search until its cutoff). Each provider
 has its own key option, so an existing Google key is never sent to Brave.
 Queries are now URL-encoded (the old `googleIterate` only escaped spaces, so a

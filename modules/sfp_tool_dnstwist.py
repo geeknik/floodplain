@@ -16,7 +16,7 @@ from pathlib import Path
 from shutil import which
 from subprocess import PIPE, Popen, TimeoutExpired
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin, SpiderFootHelpers
+from floodplain import SpiderFootEvent, SpiderFootPlugin, SpiderFootHelpers
 
 
 class sfp_tool_dnstwist(SpiderFootPlugin):

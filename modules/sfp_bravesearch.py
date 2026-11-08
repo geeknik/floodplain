@@ -13,8 +13,8 @@
 
 import json
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
-from spiderfoot.websearch import BraveSearch, WebSearchFatal, hostMatches
+from floodplain import SpiderFootEvent, SpiderFootPlugin
+from floodplain.websearch import BraveSearch, WebSearchFatal, hostMatches
 
 
 class sfp_bravesearch(SpiderFootPlugin):

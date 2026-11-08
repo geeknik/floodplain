@@ -5,7 +5,7 @@ import unittest
 import cherrypy
 from cherrypy.test import helper
 
-from spiderfoot import SpiderFootHelpers
+from floodplain import SpiderFootHelpers
 from sfwebui import SpiderFootWebUi
 
 
@@ -48,7 +48,7 @@ class TestSpiderFootWebUiRoutes(helper.CPWebCase):
             '/static': {
                 'tools.staticdir.on': True,
                 'tools.staticdir.dir': 'static',
-                'tools.staticdir.root': f"{os.path.dirname(os.path.abspath(__file__))}/../../spiderfoot",
+                'tools.staticdir.root': f"{os.path.dirname(os.path.abspath(__file__))}/../../floodplain",
             }
         }
 
@@ -59,7 +59,7 @@ class TestSpiderFootWebUiRoutes(helper.CPWebCase):
         self.assertStatus('404 Not Found')
 
     def test_static_returns_200(self):
-        self.getPage("/static/img/spiderfoot-header.png")
+        self.getPage("/static/img/floodplain-header.png")
         self.assertStatus('200 OK')
 
     def test_scaneventresultexport_invalid_scan_id_returns_200(self):

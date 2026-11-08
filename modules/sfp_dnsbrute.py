@@ -16,7 +16,7 @@ import random
 import threading
 import time
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootPlugin
 
 
 class sfp_dnsbrute(SpiderFootPlugin):
@@ -66,13 +66,13 @@ class sfp_dnsbrute(SpiderFootPlugin):
             self.opts[opt] = userOpts[opt]
 
         if self.opts['commons']:
-            with importlib.resources.open_text('spiderfoot.dicts', 'subdomains.txt') as f:
+            with importlib.resources.open_text('floodplain.dicts', 'subdomains.txt') as f:
                 for s in f.readlines():
                     s = s.strip()
                     self.sublist[s] = True
 
         if self.opts['top10000']:
-            with importlib.resources.open_text('spiderfoot.dicts', 'subdomains-10000.txt') as f:
+            with importlib.resources.open_text('floodplain.dicts', 'subdomains-10000.txt') as f:
                 for s in f.readlines():
                     s = s.strip()
                     self.sublist[s] = True

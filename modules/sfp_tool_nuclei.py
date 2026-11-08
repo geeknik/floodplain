@@ -18,7 +18,7 @@ import json
 from netaddr import IPNetwork
 from subprocess import Popen, PIPE, TimeoutExpired
 
-from spiderfoot import SpiderFootPlugin, SpiderFootEvent, SpiderFootHelpers
+from floodplain import SpiderFootPlugin, SpiderFootEvent, SpiderFootHelpers
 
 
 class sfp_tool_nuclei(SpiderFootPlugin):

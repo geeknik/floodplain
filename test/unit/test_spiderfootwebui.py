@@ -655,7 +655,7 @@ class TestSpiderFootWebUi(unittest.TestCase):
         import contextlib
 
         import cherrypy
-        from spiderfoot import SpiderFootDb
+        from floodplain import SpiderFootDb
 
         opts = self.default_options
         opts['__modules__'] = dict()
@@ -686,7 +686,7 @@ class TestSpiderFootWebUi(unittest.TestCase):
         import csv as csvmod
         import io
 
-        from spiderfoot import SpiderFootDb
+        from floodplain import SpiderFootDb
 
         opts = self.default_options
         opts['__modules__'] = dict()
@@ -728,7 +728,7 @@ class TestSpiderFootWebUi(unittest.TestCase):
         import contextlib
 
         import cherrypy
-        from spiderfoot import SpiderFootDb
+        from floodplain import SpiderFootDb
 
         opts = self.default_options
         opts['__modules__'] = dict()

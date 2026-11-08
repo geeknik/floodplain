@@ -37,11 +37,11 @@ from sflib import SpiderFoot
 
 from sfscan import startSpiderFootScanner
 
-from spiderfoot import SpiderFootDb
-from spiderfoot import SpiderFootHelpers
-from spiderfoot import CorrelationTriage
-from spiderfoot import __version__
-from spiderfoot.logger import logListenerSetup, logWorkerSetup
+from floodplain import SpiderFootDb
+from floodplain import SpiderFootHelpers
+from floodplain import CorrelationTriage
+from floodplain import __version__
+from floodplain.logger import logListenerSetup, logWorkerSetup
 
 mp.set_start_method("spawn", force=True)
 
@@ -93,7 +93,7 @@ class SpiderFootWebUi:
         else:
             self.loggingQueue = loggingQueue
         logWorkerSetup(self.loggingQueue)
-        self.log = logging.getLogger(f"spiderfoot.{__name__}")
+        self.log = logging.getLogger(f"floodplain.{__name__}")
 
         cherrypy.config.update({
             'error_page.401': self.error_page_401,
@@ -159,7 +159,7 @@ class SpiderFootWebUi:
         Returns:
             str: HTTP response template
         """
-        templ = Template(filename='spiderfoot/templates/error.tmpl', lookup=self.lookup)
+        templ = Template(filename='floodplain/templates/error.tmpl', lookup=self.lookup)
         return templ.render(message='Not Found', docroot=self.docroot, status=status, version=__version__)
 
     def jsonify_error(self: 'SpiderFootWebUi', status: str, message: str) -> dict:
@@ -190,7 +190,7 @@ class SpiderFootWebUi:
         Returns:
             None
         """
-        templ = Template(filename='spiderfoot/templates/error.tmpl', lookup=self.lookup)
+        templ = Template(filename='floodplain/templates/error.tmpl', lookup=self.lookup)
         return templ.render(message=message, docroot=self.docroot, version=__version__)
 
     def cleanUserInput(self: 'SpiderFootWebUi', inputList: list) -> list:
@@ -934,7 +934,7 @@ class SpiderFootWebUi:
                 self.log.info("Waiting for the scan to initialize...")
                 time.sleep(1)
 
-        templ = Template(filename='spiderfoot/templates/scanlist.tmpl', lookup=self.lookup)
+        templ = Template(filename='floodplain/templates/scanlist.tmpl', lookup=self.lookup)
         return templ.render(rerunscans=True, docroot=self.docroot, pageid="SCANLIST", version=__version__)
 
     @cherrypy.expose
@@ -946,7 +946,7 @@ class SpiderFootWebUi:
         """
         dbh = SpiderFootDb(self.config)
         types = dbh.eventTypes()
-        templ = Template(filename='spiderfoot/templates/newscan.tmpl', lookup=self.lookup)
+        templ = Template(filename='floodplain/templates/newscan.tmpl', lookup=self.lookup)
         return templ.render(pageid='NEWSCAN', types=types, docroot=self.docroot,
                             modules=self.config['__modules__'], scanname="",
                             selectedmods="", scantarget="", version=__version__)
@@ -983,7 +983,7 @@ class SpiderFootWebUi:
 
         modlist = scanconfig['_modulesenabled'].split(',')
 
-        templ = Template(filename='spiderfoot/templates/newscan.tmpl', lookup=self.lookup)
+        templ = Template(filename='floodplain/templates/newscan.tmpl', lookup=self.lookup)
         return templ.render(pageid='NEWSCAN', types=types, docroot=self.docroot,
                             modules=self.config['__modules__'], selectedmods=modlist,
                             scanname=str(scanname),
@@ -996,7 +996,7 @@ class SpiderFootWebUi:
         Returns:
             str: Scan list page HTML
         """
-        templ = Template(filename='spiderfoot/templates/scanlist.tmpl', lookup=self.lookup)
+        templ = Template(filename='floodplain/templates/scanlist.tmpl', lookup=self.lookup)
         return templ.render(pageid='SCANLIST', docroot=self.docroot, version=__version__)
 
     @cherrypy.expose
@@ -1016,7 +1016,7 @@ class SpiderFootWebUi:
 
         llm_enabled = CorrelationTriage(dbh, self.config).is_enabled()
 
-        templ = Template(filename='spiderfoot/templates/scaninfo.tmpl', lookup=self.lookup, input_encoding='utf-8')
+        templ = Template(filename='floodplain/templates/scaninfo.tmpl', lookup=self.lookup, input_encoding='utf-8')
         return templ.render(id=id, name=html.escape(res[0]), status=res[5], docroot=self.docroot, version=__version__,
                             pageid="SCANLIST", llm_enabled=llm_enabled)
 
@@ -1030,7 +1030,7 @@ class SpiderFootWebUi:
         Returns:
             str: scan options page HTML
         """
-        templ = Template(filename='spiderfoot/templates/opts.tmpl', lookup=self.lookup)
+        templ = Template(filename='floodplain/templates/opts.tmpl', lookup=self.lookup)
         self.token = random.SystemRandom().randint(0, 99999999)
         return templ.render(opts=self.config, pageid='SETTINGS', token=self.token, version=__version__,
                             updated=updated, docroot=self.docroot)

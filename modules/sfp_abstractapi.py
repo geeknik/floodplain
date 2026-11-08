@@ -15,7 +15,7 @@ import time
 import urllib
 from urllib.parse import urlparse
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootPlugin
 
 
 class sfp_abstractapi(SpiderFootPlugin):

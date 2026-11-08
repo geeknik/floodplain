@@ -3,7 +3,7 @@ import unittest
 
 from modules.sfp_tool_wappalyzer import sfp_tool_wappalyzer
 from sflib import SpiderFoot
-from spiderfoot import SpiderFootEvent, SpiderFootTarget
+from floodplain import SpiderFootEvent, SpiderFootTarget
 
 
 @pytest.mark.usefixtures

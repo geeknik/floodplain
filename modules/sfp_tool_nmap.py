@@ -15,7 +15,7 @@ from subprocess import PIPE, Popen
 
 from netaddr import IPNetwork
 
-from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_tool_nmap(SpiderFootPlugin):

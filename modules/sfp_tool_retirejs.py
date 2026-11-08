@@ -17,7 +17,7 @@ import shutil
 import tempfile
 from subprocess import Popen, PIPE, TimeoutExpired
 
-from spiderfoot import SpiderFootPlugin, SpiderFootEvent
+from floodplain import SpiderFootPlugin, SpiderFootEvent
 
 
 class sfp_tool_retirejs(SpiderFootPlugin):

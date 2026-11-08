@@ -13,7 +13,7 @@
 import datetime
 from urllib.parse import urlparse
 
-from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_wikileaks(SpiderFootPlugin):

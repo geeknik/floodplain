@@ -14,7 +14,7 @@ import json
 
 from netaddr import IPNetwork
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from floodplain import SpiderFootEvent, SpiderFootPlugin
 
 
 class sfp_template(SpiderFootPlugin):
@@ -203,7 +203,7 @@ class sfp_template(SpiderFootPlugin):
             self.opts[opt] = userOpts[opt]
 
     # What events is this module interested in for input
-    # For a list of all events, check spiderfoot/db.py.
+    # For a list of all events, check floodplain/db.py.
     def watchedEvents(self):
         return [
             "IP_ADDRESS",
