@@ -2,7 +2,12 @@
 #   python3 ./sf.py -l 127.0.0.1:5001
 # then:
 #   robot --variable BROWSER:Firefox --outputdir results example.robot
+# Includes test/requirements.txt, which includes the runtime requirements.txt.
+# GitHub's dependency graph only re-parses a manifest when that file changes,
+# so after bumping pins in an included file, edit this header (e.g. the date
+# below) in the same commit or Dependabot keeps stale alerts open.
+# Last synced with included pins: 2026-11-07
 -r ../requirements.txt
-robotframework
-robotframework-seleniumlibrary
+robotframework==7.5.1
+robotframework-seleniumlibrary==6.9.0
 

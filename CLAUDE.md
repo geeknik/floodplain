@@ -10,7 +10,7 @@ Versioning restarted at `0.0.1` (SemVer pre-1.0; bump `VERSION`, `floodplain/__v
 
 ## Commands
 
-Python 3.11+ required (CI matrix: 3.11–3.13 on ubuntu + macOS). `requirements.lock` is generated with Python 3.11 (`pip-compile`, command in its header); transitive pins that need a floor (e.g. `soupsieve`) live at the bottom of `requirements.txt`.
+Python 3.11+ required (CI matrix: 3.11–3.13 on ubuntu + macOS). `requirements.lock` is generated with Python 3.11 (`pip-compile`, command in its header); transitive pins that need a floor (e.g. `soupsieve`) live at the bottom of `requirements.txt`. `test/requirements.txt` and `test/acceptance/requirements.txt` pull in pins via `-r`; GitHub only re-parses a manifest when *that* file changes, so when you bump a pin in `requirements.txt`, also update the "Last synced" date in both test manifests in the same commit — otherwise Dependabot keeps stale alerts open.
 
 ```bash
 # Install runtime + dev/test deps
