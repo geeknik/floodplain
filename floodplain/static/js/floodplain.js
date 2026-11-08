@@ -111,12 +111,12 @@ sf.deleteScan = function(scan_id, callback) {
       url: docroot + "/scandelete?id=" + scan_id
     });
     req.done(function() {
-        alertify.success('<i class="glyphicon glyphicon-ok-circle"></i> <b>Scans Deleted</b><br/><br/>' + scan_id.replace(/,/g, "<br/>"));
+        sf.notify.success("Scans Deleted", String(scan_id).split(","));
         sf.log("Deleted scans: " + scan_id);
         callback();
     });
     req.fail(function (hr, textStatus, errorThrown) {
-        alertify.error('<i class="glyphicon glyphicon-minus-sign"></i> <b>Error</b><br/></br>' + hr.responseText);
+        sf.notify.error("Error", hr.responseText);
         sf.log("Error deleting scans: " + scan_id + ": " + hr.responseText);
     });
 };
@@ -127,12 +127,12 @@ sf.stopScan = function(scan_id, callback) {
       url: docroot + "/stopscan?id=" + scan_id
     });
     req.done(function() {
-        alertify.success('<i class="glyphicon glyphicon-ok-circle"></i> <b>Scans Aborted</b><br/><br/>' + scan_id.replace(/,/g, "<br/>"));
+        sf.notify.success("Scans Aborted", String(scan_id).split(","));
         sf.log("Aborted scans: " + scan_id);
         callback();
     });
     req.fail(function (hr, textStatus, errorThrown) {
-        alertify.error('<i class="glyphicon glyphicon-minus-sign"></i> <b>Error</b><br/><br/>' + hr.responseText);
+        sf.notify.error("Error", hr.responseText);
         sf.log("Error stopping scans: " + scan_id + ": " + hr.responseText);
     });
 };
@@ -148,7 +148,7 @@ sf.fetchData = function (url, postData, postFunc) {
 
   req.done(postFunc);
   req.fail(function (hr, status) {
-      alertify.error('<i class="glyphicon glyphicon-minus-sign"></i> <b>Error</b><br/>' + status);
+      sf.notify.error("Error", status);
   });
 };
 

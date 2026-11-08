@@ -58,7 +58,7 @@ pip-audit --strict -r requirements.lock        # full locked closure (hash-pinne
 
 ### Entry points (repo root)
 - `sf.py` — main launcher. Loads all modules + correlation rules into `sfConfig`, then either starts the web server (`-l`), runs a CLI scan (`-s`), or runs correlations against an existing scan (`-C`). A CLI scan spawns `startSpiderFootScanner` in a separate `multiprocessing.Process` and polls the DB for completion.
-- `sfwebui.py` — CherryPy web application (`SpiderFootWebUi`). Serves the UI and a JSON API; templates in `floodplain/templates/` (Mako), static assets in `floodplain/static/` (`floodplain.js/.css`, `img/floodplain-*.png`).
+- `sfwebui.py` — CherryPy web application (`SpiderFootWebUi`). Serves the UI and a JSON API; templates in `floodplain/templates/` (Mako), static assets in `floodplain/static/` (`floodplain.js/.css`, `img/floodplain-*.png`). UI notifications/confirm dialogs go through `sf.notify` (`floodplain.notify.js`), which renders text only — never build HTML from server or scan data. Vendored libraries live in `floodplain/static/node_modules/` and must be permissively licensed, ship their LICENSE file, and be listed in `package.json` and `THIRD-PARTY-NOTICES.md` (`test/unit/test_third_party_notices.py` enforces it).
 - `sfcli.py` — interactive remote CLI client that talks to a running web server's API.
 - `sflib.py` — the `SpiderFoot` utility class: HTTP fetching, DNS, target/type detection, module dependency resolution (`modulesProducing`/`modulesConsuming`/`eventsToModules`), config serialize/unserialize. Passed to every module as `self.sf`.
 - `sfscan.py` — `SpiderFootScanner`: instantiates the selected modules, wires the event pipeline, drives a scan to completion, runs post-scan correlations.

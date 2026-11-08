@@ -44,49 +44,49 @@ function getSelected() {
 }
 
 function stopScan(id) {
-    alertify.confirm("Are you sure you wish to stop this scan?",
+    sf.notify.confirm("Stop scan?", "Are you sure you wish to stop this scan?", null,
     function(){
         sf.stopScan(id, reload);
-    }).set({title:"Stop scan?"});
+    });
 }
 
 function stopSelected() {
     ids = getSelected();
     if (!ids) {
-        alertify.message("Could not stop scans. No scans selected.");
+        sf.notify.message("Could not stop scans. No scans selected.");
         return;
     }
 
-    alertify.confirm("Are you sure you wish to stop these " + ids.length + " scans?<br/><br/>" + ids.join("<br/>"),
+    sf.notify.confirm("Stop scans?", "Are you sure you wish to stop these " + ids.length + " scans?", ids,
     function(){
         sf.stopScan(ids.join(','), reload);
-    }).set({title:"Stop scans?"});
+    });
 }
 
 function deleteScan(id) {
-    alertify.confirm("Are you sure you wish to delete this scan?",
+    sf.notify.confirm("Delete scan?", "Are you sure you wish to delete this scan?", null,
     function(){
         sf.deleteScan(id, reload);
-    }).set({title:"Delete scan?"});
+    });
 }
 
 function deleteSelected() {
     ids = getSelected();
     if (!ids) {
-        alertify.message("Could not delete scans. No scans selected.");
+        sf.notify.message("Could not delete scans. No scans selected.");
         return;
     }
 
-    alertify.confirm("Are you sure you wish to delete these " + ids.length + " scans?<br/><br/>" + ids.join("<br/>"),
+    sf.notify.confirm("Delete scans?", "Are you sure you wish to delete these " + ids.length + " scans?", ids,
     function(){
         sf.deleteScan(ids.join(','), reload);
-    }).set({title:"Delete scans?"});
+    });
 }
 
 function rerunSelected() {
     ids = getSelected();
     if (!ids) {
-        alertify.message("Could not re-run scan. No scans selected.");
+        sf.notify.message("Could not re-run scan. No scans selected.");
         return;
     }
 

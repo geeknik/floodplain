@@ -10,7 +10,7 @@
 
 **Floodplain** is an open source intelligence (OSINT) automation tool. It integrates with just about every data source available and utilises a range of methods for data analysis, making that data easy to navigate. 
 
-Floodplain has an embedded web-server for providing a clean and intuitive web-based interface but can also be used completely via the command-line.  It's written in **Python 3** and **MIT-licensed**.
+Floodplain has an embedded web-server for providing a clean and intuitive web-based interface but can also be used completely via the command-line.  It's written in **Python 3** and **MIT-licensed** (bundled third-party components keep their own permissive licenses — see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
 
 ### FEATURES
 
