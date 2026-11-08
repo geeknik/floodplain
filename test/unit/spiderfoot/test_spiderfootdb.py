@@ -1,4 +1,5 @@
 # test_spiderfootdb.py
+import os
 import pytest
 import unittest
 
@@ -1469,3 +1470,26 @@ class TestSpiderFootDb(unittest.TestCase):
         finally:
             if os.path.exists(db_path):
                 os.remove(db_path)
+
+
+class TestSpiderFootDbEventTypeSync(unittest.TestCase):
+
+    def test_existing_database_gets_new_event_types(self):
+        import sqlite3
+        import tempfile
+        path = os.path.join(tempfile.mkdtemp(), "old.db")
+        SpiderFootDb({'__database': path}, init=True)
+        conn = sqlite3.connect(path)
+        conn.execute("DELETE FROM tbl_event_types WHERE event = 'MALICIOUS_ETHEREUM_ADDRESS'")
+        conn.execute("UPDATE tbl_event_types SET event_descr = 'customised' WHERE event = 'IP_ADDRESS'")
+        conn.commit()
+        conn.close()
+
+        SpiderFootDb({'__database': path})
+
+        conn = sqlite3.connect(path)
+        rows = dict(conn.execute("SELECT event, event_descr FROM tbl_event_types").fetchall())
+        conn.close()
+        self.assertEqual(rows.get('MALICIOUS_ETHEREUM_ADDRESS'), 'Malicious Ethereum Address')
+        self.assertEqual(rows.get('IP_ADDRESS'), 'customised')
+        self.assertEqual(len(rows), len(SpiderFootDb.eventDetails))

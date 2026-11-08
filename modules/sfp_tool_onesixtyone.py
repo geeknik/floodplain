@@ -119,7 +119,7 @@ class sfp_tool_onesixtyone(SpiderFootPlugin):
         try:
             if eventName == "NETBLOCK_OWNER" and self.opts['netblockscan']:
                 net = IPNetwork(eventData)
-                if net.prefixlen < self.opts['netblockscanmax']:
+                if not SpiderFootHelpers.netblockWithinLimit(net, self.opts['netblockscanmax']):
                     self.debug(f"Skipping scanning of {eventData}, too big.")
                     return
                 for addr in net.iter_hosts():

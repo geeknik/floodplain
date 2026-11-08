@@ -34,9 +34,9 @@ class TestModuleChainabuse(unittest.TestCase):
         module.setTarget(SpiderFootTarget('example.com', 'INTERNET_NAME'))
         return module
 
-    def _run(self, module, data, response):
+    def _run(self, module, data, response, etype='BITCOIN_ADDRESS'):
         root = SpiderFootEvent('ROOT', 'example.com', '', '')
-        evt = SpiderFootEvent('BITCOIN_ADDRESS', data, 'test', root)
+        evt = SpiderFootEvent(etype, data, 'test', root)
         emitted = []
         with patch.object(module.sf, 'fetchUrl', return_value=response) as fetch, \
                 patch.object(module, 'notifyListeners', side_effect=emitted.append):
@@ -55,7 +55,7 @@ class TestModuleChainabuse(unittest.TestCase):
         sfp_chainabuse().setup(SpiderFoot(self.default_options), dict())
 
     def test_watched_and_produced_events(self):
-        self.assertEqual(sfp_chainabuse().watchedEvents(), ["BITCOIN_ADDRESS"])
+        self.assertEqual(sorted(sfp_chainabuse().watchedEvents()), ["BITCOIN_ADDRESS", "ETHEREUM_ADDRESS"])
         self.assertIsInstance(sfp_chainabuse().producedEvents(), list)
 
     def test_no_api_key_sets_errorState(self):
@@ -144,3 +144,19 @@ class TestModuleChainabuse(unittest.TestCase):
             with self.subTest(content=content):
                 _, emitted = self._run(self._module(), ADDR, {'code': '200', 'content': content})
                 self.assertEqual(emitted, [])
+
+    def test_ethereum_address_case_insensitive_match(self):
+        eth = "0x52908400098527886E0F7030069857D2E4169EE7"
+        rep = report(addr=eth.lower(), category="PHISHING")
+        fetch, emitted = self._run(self._module(), eth, self.ok([rep]), etype='ETHEREUM_ADDRESS')
+        self.assertIn(f"address={eth.lower()}", fetch.call_args[0][0])
+        by_type = {e.eventType: e.data for e in emitted}
+        self.assertIn("MALICIOUS_ETHEREUM_ADDRESS", by_type)
+        self.assertNotIn("MALICIOUS_BITCOIN_ADDRESS", by_type)
+        self.assertTrue(by_type["MALICIOUS_ETHEREUM_ADDRESS"].startswith(f"Chainabuse [{eth.lower()}] (1 report(s): PHISHING)"))
+
+    def test_malformed_ethereum_address_not_queried(self):
+        for data in ("0x123", "52908400098527886E0F7030069857D2E4169EE7", "0x" + "g" * 40, "0x" + "a" * 41):
+            with self.subTest(data=data):
+                fetch, _ = self._run(self._module(), data, self.ok([]), etype='ETHEREUM_ADDRESS')
+                fetch.assert_not_called()

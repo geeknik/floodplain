@@ -15,7 +15,7 @@ from subprocess import PIPE, Popen
 
 from netaddr import IPNetwork
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_tool_nmap(SpiderFootPlugin):
@@ -92,7 +92,7 @@ class sfp_tool_nmap(SpiderFootPlugin):
         try:
             if eventName == "NETBLOCK_OWNER" and self.opts['netblockscan']:
                 net = IPNetwork(eventData)
-                if net.prefixlen < self.opts['netblockscanmax']:
+                if not SpiderFootHelpers.netblockWithinLimit(net, self.opts['netblockscanmax']):
                     self.debug("Skipping port scanning of " + eventData + ", too big.")
                     return
 

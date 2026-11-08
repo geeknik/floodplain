@@ -29,6 +29,7 @@ import re
 from spiderfoot import SpiderFootEvent, SpiderFootPlugin
 
 ADDRESS_RE = re.compile(r'^[A-Za-z0-9]{20,100}$')
+ETH_ADDRESS_RE = re.compile(r'^0x[0-9a-fA-F]{40}$')
 CATEGORY_RE = re.compile(r'^[A-Z][A-Z_]{0,39}$')
 REPORT_ID_RE = re.compile(r'^[0-9a-fA-F-]{1,64}$')
 DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}')
@@ -38,7 +39,7 @@ class sfp_chainabuse(SpiderFootPlugin):
 
     meta = {
         'name': "Chainabuse",
-        'summary': "Check Bitcoin addresses against Chainabuse (formerly BitcoinAbuse) scam reports.",
+        'summary': "Check Bitcoin and Ethereum addresses against Chainabuse (formerly BitcoinAbuse) scam reports.",
         'flags': ["apikey"],
         'useCases': ["Passive", "Investigate"],
         'categories': ["Reputation Systems"],
@@ -91,11 +92,17 @@ class sfp_chainabuse(SpiderFootPlugin):
         for opt in list(userOpts.keys()):
             self.opts[opt] = userOpts[opt]
 
+    # Watched event type -> (malicious event type, validator, case-insensitive)
+    CHAINS = {
+        "BITCOIN_ADDRESS": ("MALICIOUS_BITCOIN_ADDRESS", ADDRESS_RE, False),
+        "ETHEREUM_ADDRESS": ("MALICIOUS_ETHEREUM_ADDRESS", ETH_ADDRESS_RE, True),
+    }
+
     def watchedEvents(self):
-        return ["BITCOIN_ADDRESS"]
+        return list(self.CHAINS)
 
     def producedEvents(self):
-        return ["MALICIOUS_BITCOIN_ADDRESS", "RAW_RIR_DATA"]
+        return ["MALICIOUS_BITCOIN_ADDRESS", "MALICIOUS_ETHEREUM_ADDRESS", "RAW_RIR_DATA"]
 
     def queryLimit(self) -> int:
         """Per-scan lookup limit, clamped to a sane range.
@@ -174,12 +181,13 @@ class sfp_chainabuse(SpiderFootPlugin):
         return [r for r in data['reports'] if isinstance(r, dict)]
 
     @staticmethod
-    def reportMentions(report: dict, address: str) -> bool:
+    def reportMentions(report: dict, address: str, ignore_case: bool = False) -> bool:
         """Check that a report actually lists the queried address.
 
         Args:
             report (dict): report
             address (str): queried address
+            ignore_case (bool): compare case-insensitively (Ethereum checksum case)
 
         Returns:
             bool: the address appears in the report's address list
@@ -187,7 +195,14 @@ class sfp_chainabuse(SpiderFootPlugin):
         addresses = report.get('addresses')
         if not isinstance(addresses, list):
             return False
-        return any(isinstance(a, dict) and a.get('address') == address for a in addresses)
+        want = address.lower() if ignore_case else address
+        for a in addresses:
+            if not isinstance(a, dict) or not isinstance(a.get('address'), str):
+                continue
+            have = a['address'].lower() if ignore_case else a['address']
+            if have == want:
+                return True
+        return False
 
     @staticmethod
     def summarise(address: str, reports: list) -> dict:
@@ -226,10 +241,17 @@ class sfp_chainabuse(SpiderFootPlugin):
             self.errorState = True
             return
 
+        chain = self.CHAINS.get(event.eventType)
+        if chain is None:
+            return
+        malicious_type, validator, ignore_case = chain
+
         address = event.data
-        if not isinstance(address, str) or not ADDRESS_RE.match(address):
+        if not isinstance(address, str) or not validator.match(address):
             self.debug("Skipping malformed address.")
             return
+        if ignore_case:
+            address = address.lower()
 
         if address in self.results:
             self.debug(f"Skipping {address}, already checked.")
@@ -246,7 +268,7 @@ class sfp_chainabuse(SpiderFootPlugin):
         if not reports:
             return
 
-        reports = [r for r in reports if self.reportMentions(r, address)]
+        reports = [r for r in reports if self.reportMentions(r, address, ignore_case)]
         if not reports:
             return
 
@@ -256,7 +278,7 @@ class sfp_chainabuse(SpiderFootPlugin):
             detail += ": " + ", ".join(summary['categories'])
 
         evt = SpiderFootEvent(
-            "MALICIOUS_BITCOIN_ADDRESS",
+            malicious_type,
             f"Chainabuse [{address}] ({detail})\n<SFURL>https://chainabuse.com/address/{address}</SFURL>",
             self.__name__,
             event

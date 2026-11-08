@@ -18,7 +18,7 @@ from datetime import datetime
 
 from netaddr import IPNetwork
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_xforce(SpiderFootPlugin):
@@ -239,8 +239,8 @@ class sfp_xforce(SpiderFootPlugin):
             else:
                 max_subnet = self.opts['maxsubnet']
 
-            if IPNetwork(eventData).prefixlen < max_subnet:
-                self.debug(f"Network size bigger than permitted: {IPNetwork(eventData).prefixlen} > {max_subnet}")
+            if not SpiderFootHelpers.netblockWithinLimit(eventData, max_subnet):
+                self.debug(f"Network size bigger than permitted (limit /{max_subnet}): {eventData}")
                 return
 
             malicious_type = "MALICIOUS_SUBNET"
@@ -254,8 +254,8 @@ class sfp_xforce(SpiderFootPlugin):
             else:
                 max_netblock = self.opts['maxnetblock']
 
-            if IPNetwork(eventData).prefixlen < max_netblock:
-                self.debug(f"Network size bigger than permitted: {IPNetwork(eventData).prefixlen} > {max_netblock}")
+            if not SpiderFootHelpers.netblockWithinLimit(eventData, max_netblock):
+                self.debug(f"Network size bigger than permitted (limit /{max_netblock}): {eventData}")
                 return
 
             malicious_type = "MALICIOUS_NETBLOCK"

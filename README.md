@@ -138,7 +138,7 @@ Bitcoin Finder|Identify bitcoin addresses in scraped webpages.|Internal
 [Censys](https://censys.io/)|Obtain host information from Censys.io.|Tiered API
 [Certificate Transparency](https://crt.sh/)|Gather hostnames from historical certificates in crt.sh.|Free API
 [CertSpotter](https://sslmate.com/certspotter/)|Gather information about SSL certificates from SSLMate CertSpotter API.|Tiered API
-[Chainabuse](https://www.chainabuse.com/)|Check Bitcoin addresses against Chainabuse (formerly BitcoinAbuse) scam reports.|Tiered API
+[Chainabuse](https://www.chainabuse.com/)|Check Bitcoin and Ethereum addresses against Chainabuse (formerly BitcoinAbuse) scam reports.|Tiered API
 [CINS Army List](https://cinsscore.com/)|Check if a netblock or IP address is malicious according to Collective Intelligence Network Security (CINS) Army list.|Free API
 [CIRCL.LU](https://www.circl.lu/)|Obtain information from CIRCL.LU's Passive DNS and Passive SSL databases.|Free API
 [CleanBrowsing.org](https://cleanbrowsing.org/)|Check if a host would be blocked by CleanBrowsing.org DNS content filters.|Free API

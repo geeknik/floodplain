@@ -16,7 +16,7 @@ import urllib
 
 from netaddr import IPNetwork
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_dnsresolve(SpiderFootPlugin):
@@ -123,8 +123,8 @@ class sfp_dnsresolve(SpiderFootPlugin):
                 ret.extend(r)
         if t == "NETBLOCK_OWNER":
             max_netblock = self.opts['maxnetblock']
-            if IPNetwork(v).prefixlen < max_netblock:
-                self.debug(f"Network size bigger than permitted: {IPNetwork(v).prefixlen} > {max_netblock}")
+            if not SpiderFootHelpers.netblockWithinLimit(v, max_netblock):
+                self.debug(f"Network size bigger than permitted (limit /{max_netblock}): {v}")
                 return list(set(ret))
 
             for addr in IPNetwork(v):
@@ -155,8 +155,8 @@ class sfp_dnsresolve(SpiderFootPlugin):
                         ret.append(host)
         if t == "NETBLOCKV6_OWNER":
             max_netblock = self.opts['maxv6netblock']
-            if IPNetwork(v).prefixlen < max_netblock:
-                self.debug(f"Network size bigger than permitted: {IPNetwork(v).prefixlen} > {max_netblock}")
+            if not SpiderFootHelpers.netblockWithinLimit(v, max_netblock):
+                self.debug(f"Network size bigger than permitted (limit /{max_netblock}): {v}")
                 return list(set(ret))
 
             for addr in IPNetwork(v):
@@ -327,8 +327,8 @@ class sfp_dnsresolve(SpiderFootPlugin):
             else:
                 max_netblock = self.opts['maxnetblock']
 
-            if IPNetwork(eventData).prefixlen < max_netblock:
-                self.debug(f"Network size bigger than permitted: {IPNetwork(eventData).prefixlen} > {max_netblock}")
+            if not SpiderFootHelpers.netblockWithinLimit(eventData, max_netblock):
+                self.debug(f"Network size bigger than permitted (limit /{max_netblock}): {eventData}")
                 return
 
             self.debug(f"Looking up IPs in owned netblock: {eventData}")

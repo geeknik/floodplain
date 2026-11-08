@@ -138,7 +138,7 @@ class sfp_tool_nuclei(SpiderFootPlugin):
             if eventName == "NETBLOCK_OWNER" and self.opts['netblockscan']:
                 target = ""
                 net = IPNetwork(eventData)
-                if net.prefixlen < self.opts['netblockscanmax']:
+                if not SpiderFootHelpers.netblockWithinLimit(net, self.opts['netblockscanmax']):
                     self.debug(f"Skipping scanning of {eventData}, too big.")
                     return
 

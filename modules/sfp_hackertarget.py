@@ -20,7 +20,7 @@ import urllib.request
 
 from netaddr import IPNetwork
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_hackertarget(SpiderFootPlugin):
@@ -243,9 +243,8 @@ class sfp_hackertarget(SpiderFootPlugin):
                 return
 
             max_netblock = self.opts['maxnetblock']
-            net_size = IPNetwork(eventData).prefixlen
-            if net_size < max_netblock:
-                self.debug(f"Network size bigger than permitted: {net_size} > {max_netblock}")
+            if not SpiderFootHelpers.netblockWithinLimit(eventData, max_netblock):
+                self.debug(f"Network size bigger than permitted (limit /{max_netblock}): {eventData}")
                 return
 
         if eventName == 'DOMAIN_NAME_PARENT':

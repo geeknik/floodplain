@@ -116,7 +116,7 @@ Google options.
 | `sfp_phishstats` | Moved to `https://api.phishstats.info/api/phishing`; optional `X-API-Key` header (anonymous: 50 req/day/IP). IP validated before it enters PhishStats' `_where` filter syntax (blocks `~or(...)` injection); netblock expansion IPv4-only and size-bounded; 401/403/429 stop the module; self-throttled to the published 20 req/min. Model now `FREE_NOAUTH_LIMITED`. |
 | `sfp_emailrep` | API key now mandatory (unauthenticated API disabled). Email validated and URL-encoded before it is placed in the request path (previously raw concatenation allowed path injection with the key header attached). |
 | `sfp_nameapi` | `http://` → `https://` (the key is a query parameter and was sent in cleartext). Email validated and URL-encoded; verdict allow-listed; results de-duplicated. |
-| `sfp_bitcoinabuse` | **Replaced by `sfp_chainabuse`** (TRM Labs Chainabuse API, HTTP Basic auth). Free keys allow 10 calls/month, so lookups are capped per scan (`max_queries`, default 5) and de-duplicated. Only a structured summary is emitted; reporters' free-text descriptions, losses, evidence and IPs are discarded. Bitcoin only for now — Ethereum needs a `MALICIOUS_ETHEREUM_ADDRESS` event type plus an event-type migration for existing databases. |
+| `sfp_bitcoinabuse` | **Replaced by `sfp_chainabuse`** (TRM Labs Chainabuse API, HTTP Basic auth). Free keys allow 10 calls/month, so lookups are capped per scan (`max_queries`, default 5) and de-duplicated. Only a structured summary is emitted; reporters' free-text descriptions, losses, evidence and IPs are discarded. Ethereum added 2026-11-07 (new `MALICIOUS_ETHEREUM_ADDRESS` event type; existing databases register new event types automatically on open). |
 | `sfp_koodous` | 401 *and* 403 treated as missing/invalid key. Also fixed: a "no results" 404 disabled the module for the rest of the scan; `results: null` crashed it; untrusted `sha256`/app name were embedded raw in `<SFURL>` markup; pagination now hard-capped at 50 pages with a validated cursor. |
 
 Cross-cutting fix found during this work: `sflib.removeUrlCreds()` passed
@@ -149,3 +149,24 @@ message.
 
 Repeat this sweep at least every release. Treat sandbox DNS failures as
 unverified until confirmed by authoritative DNS from an independent network.
+
+## Follow-up hardening (2026-11-07)
+
+Netblock expansion is now bounded centrally by
+`SpiderFootHelpers.netblockWithinLimit()` in every module that turns a netblock
+into per-address lookups or hands it to an external scanner (26 modules). The
+old checks compared only `prefixlen` against an IPv4-scale limit, so an IPv6
+prefix arriving as `NETBLOCK_OWNER`/`NETBLOCK_MEMBER` would pass and be
+enumerated (2^64 addresses for a /64). An adversarial unit test feeds every
+netblock-consuming module an IPv6 /64 and fails if anything is expanded.
+
+That test also found two modules with no size check at all:
+
+* `sfp_torexits` enumerated every owned netblock — including genuine
+  `NETBLOCKV6_OWNER` events from RIPE (an IPv6 /32 is 2^96 addresses) — and
+  re-parsed the multi-MB exit list once per address. It now selects the known
+  exit nodes inside the netblock instead of enumerating it, and an
+  `if`/`if`/`else` bug that parented IPv4 hits to the wrong event is fixed.
+* `sfp_virustotal` had the same prefix-only check under a different log
+  message.
+

@@ -13,7 +13,7 @@
 
 import json
 
-from netaddr import IPNetwork
+from netaddr import IPAddress, IPNetwork
 
 from spiderfoot import SpiderFootEvent, SpiderFootPlugin
 
@@ -192,14 +192,30 @@ class sfp_torexits(SpiderFootPlugin):
             if not self.opts.get('checknetblocks', False):
                 return
 
+        is_netblock = eventName.startswith("NETBLOCK")
         addrs = list()
-        if eventName.startswith("NETBLOCK"):
-            for addr in IPNetwork(eventData):
-                addrs.append(str(addr))
+        if is_netblock:
+            # Never enumerate the netblock (an IPv6 allocation can hold 2^96
+            # addresses): select the known exit nodes that fall inside it.
+            try:
+                net = IPNetwork(eventData)
+            except Exception:
+                self.debug("Skipping invalid netblock.")
+                return
+            exit_addresses = self.retrieveExitNodes()
+            if not exit_addresses:
+                self.errorState = True
+                return
+            for ip in exit_addresses:
+                try:
+                    if IPAddress(ip) in net:
+                        addrs.append(ip)
+                except Exception:
+                    continue
         else:
             addrs.append(eventData)
 
-        for addr in addrs:
+        for addr in sorted(set(addrs)):
             if self.checkForStop():
                 return
 
@@ -208,14 +224,14 @@ class sfp_torexits(SpiderFootPlugin):
 
             self.results[addr] = True
 
-            if not self.queryExitNodes(addr):
+            if not is_netblock and not self.queryExitNodes(addr):
                 continue
 
             # For netblocks, we need to create the associated IP address event first.
             if eventName == 'NETBLOCK_OWNER':
                 pevent = SpiderFootEvent("IP_ADDRESS", addr, self.__name__, event)
                 self.notifyListeners(pevent)
-            if eventName == 'NETBLOCKV6_OWNER':
+            elif eventName == 'NETBLOCKV6_OWNER':
                 pevent = SpiderFootEvent("IPV6_ADDRESS", addr, self.__name__, event)
                 self.notifyListeners(pevent)
             else:

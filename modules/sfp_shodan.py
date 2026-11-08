@@ -18,7 +18,7 @@ import urllib.request
 
 from netaddr import IPNetwork
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_shodan(SpiderFootPlugin):
@@ -243,8 +243,8 @@ class sfp_shodan(SpiderFootPlugin):
             if not self.opts['netblocklookup']:
                 return
             max_netblock = self.opts['maxnetblock']
-            if IPNetwork(eventData).prefixlen < max_netblock:
-                self.debug(f"Network size bigger than permitted: {IPNetwork(eventData).prefixlen} > {max_netblock}")
+            if not SpiderFootHelpers.netblockWithinLimit(eventData, max_netblock):
+                self.debug(f"Network size bigger than permitted (limit /{max_netblock}): {eventData}")
                 return
 
         qrylist = list()

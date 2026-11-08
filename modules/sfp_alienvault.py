@@ -19,7 +19,7 @@ from datetime import datetime
 
 from netaddr import IPNetwork
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_alienvault(SpiderFootPlugin):
@@ -350,8 +350,8 @@ class sfp_alienvault(SpiderFootPlugin):
             else:
                 max_netblock = self.opts['maxnetblock']
 
-            if IPNetwork(eventData).prefixlen < max_netblock:
-                self.debug(f"Network size bigger than permitted: {IPNetwork(eventData).prefixlen} > {max_netblock}")
+            if not SpiderFootHelpers.netblockWithinLimit(eventData, max_netblock):
+                self.debug(f"Network size bigger than permitted (limit /{max_netblock}): {eventData}")
                 return
 
         if eventName in ['NETBLOCK_MEMBER', 'NETBLOCKV6_MEMBER']:
@@ -363,8 +363,8 @@ class sfp_alienvault(SpiderFootPlugin):
             else:
                 max_subnet = self.opts['maxsubnet']
 
-            if IPNetwork(eventData).prefixlen < max_subnet:
-                self.debug(f"Network size bigger than permitted: {IPNetwork(eventData).prefixlen} > {max_subnet}")
+            if not SpiderFootHelpers.netblockWithinLimit(eventData, max_subnet):
+                self.debug(f"Network size bigger than permitted (limit /{max_subnet}): {eventData}")
                 return
 
         qrylist = list()

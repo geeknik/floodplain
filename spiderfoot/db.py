@@ -204,6 +204,7 @@ class SpiderFootDb:
         ['LINKED_URL_EXTERNAL', 'Linked URL - External', 0, 'SUBENTITY'],
         ['MALICIOUS_ASN', 'Malicious AS', 0, 'DESCRIPTOR'],
         ['MALICIOUS_BITCOIN_ADDRESS', 'Malicious Bitcoin Address', 0, 'DESCRIPTOR'],
+        ['MALICIOUS_ETHEREUM_ADDRESS', 'Malicious Ethereum Address', 0, 'DESCRIPTOR'],
         ['MALICIOUS_IPADDR', 'Malicious IP Address', 0, 'DESCRIPTOR'],
         ['MALICIOUS_COHOST', 'Malicious Co-Hosted Site', 0, 'DESCRIPTOR'],
         ['MALICIOUS_EMAILADDR', 'Malicious E-mail Address', 0, 'DESCRIPTOR'],
@@ -397,6 +398,20 @@ class SpiderFootDb:
                     self.conn.commit()
                 except sqlite3.Error:
                     raise IOError("Failed to add the LLM triage table to the database.") from None
+
+            # Event types are only inserted when a database is created, so
+            # register any types added in later releases (e.g.
+            # MALICIOUS_ETHEREUM_ADDRESS) in existing databases. INSERT OR
+            # IGNORE never alters rows that already exist.
+            if not init:
+                try:
+                    self.dbh.executemany(
+                        "INSERT OR IGNORE INTO tbl_event_types (event, event_descr, event_raw, event_type) VALUES (?, ?, ?, ?)",
+                        [tuple(row) for row in self.eventDetails]
+                    )
+                    self.conn.commit()
+                except sqlite3.Error:
+                    raise IOError("Failed to register new event types in the database.") from None
 
             if init:
                 for row in self.eventDetails:

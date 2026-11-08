@@ -17,7 +17,7 @@ import time
 
 from netaddr import IPNetwork
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_portscan_tcp(SpiderFootPlugin):
@@ -197,7 +197,7 @@ class sfp_portscan_tcp(SpiderFootPlugin):
                 self.error(f"Strange netblock identified, unable to parse: {eventData} ({e})")
                 return
 
-            if net.prefixlen < self.opts['netblockscanmax']:
+            if not SpiderFootHelpers.netblockWithinLimit(net, self.opts['netblockscanmax']):
                 self.debug(f"Skipping port scanning of owned net block {eventData}, too big.")
                 return
 

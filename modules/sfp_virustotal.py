@@ -18,7 +18,7 @@ import urllib.request
 
 from netaddr import IPNetwork
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_virustotal(SpiderFootPlugin):
@@ -202,20 +202,18 @@ class sfp_virustotal(SpiderFootPlugin):
             if not self.opts['netblocklookup']:
                 return
 
-            net_size = IPNetwork(eventData).prefixlen
             max_netblock = self.opts['maxnetblock']
-            if net_size < max_netblock:
-                self.debug(f"Network size {net_size} bigger than permitted: {max_netblock}")
+            if not SpiderFootHelpers.netblockWithinLimit(eventData, max_netblock):
+                self.debug(f"Network size bigger than permitted (limit /{max_netblock}): {eventData}")
                 return
 
         if eventName == 'NETBLOCK_MEMBER':
             if not self.opts['subnetlookup']:
                 return
 
-            net_size = IPNetwork(eventData).prefixlen
             max_subnet = self.opts['maxsubnet']
-            if net_size < max_subnet:
-                self.debug(f"Network size {net_size} bigger than permitted: {max_subnet}")
+            if not SpiderFootHelpers.netblockWithinLimit(eventData, max_subnet):
+                self.debug(f"Network size bigger than permitted (limit /{max_subnet}): {eventData}")
                 return
 
         qrylist = list()

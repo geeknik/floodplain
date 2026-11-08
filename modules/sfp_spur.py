@@ -15,7 +15,7 @@ import json
 
 from netaddr import IPNetwork
 
-from spiderfoot import SpiderFootEvent, SpiderFootPlugin
+from spiderfoot import SpiderFootEvent, SpiderFootHelpers, SpiderFootPlugin
 
 
 class sfp_spur(SpiderFootPlugin):
@@ -158,20 +158,16 @@ class sfp_spur(SpiderFootPlugin):
             if not self.opts['netblocklookup']:
                 return
 
-            if IPNetwork(eventData).prefixlen < self.opts['maxnetblock']:
-                self.debug("Network size bigger than permitted: "
-                           + str(IPNetwork(eventData).prefixlen) + " > "
-                           + str(self.opts['maxnetblock']))
+            if not SpiderFootHelpers.netblockWithinLimit(eventData, self.opts['maxnetblock']):
+                self.debug(f"Network size bigger than permitted (limit /{self.opts['maxnetblock']}): {eventData}")
                 return
 
         if eventName == 'NETBLOCK_MEMBER':
             if not self.opts['subnetlookup']:
                 return
 
-            if IPNetwork(eventData).prefixlen < self.opts['maxsubnet']:
-                self.debug("Network size bigger than permitted: "
-                           + str(IPNetwork(eventData).prefixlen) + " > "
-                           + str(self.opts['maxsubnet']))
+            if not SpiderFootHelpers.netblockWithinLimit(eventData, self.opts['maxsubnet']):
+                self.debug(f"Network size bigger than permitted (limit /{self.opts['maxsubnet']}): {eventData}")
                 return
 
         qrylist = list()

@@ -13,6 +13,7 @@ import uuid
 from pathlib import Path
 from importlib import resources
 
+import netaddr
 import networkx as nx
 from bs4 import BeautifulSoup, SoupStrainer
 from networkx.readwrite.gexf import GEXFWriter
@@ -177,6 +178,43 @@ class SpiderFootHelpers():
         """
         path = SpiderFootHelpers.envPath('LOGS') or os.path.join(SpiderFootHelpers.dataPath(), "logs")
         return SpiderFootHelpers.ensureDir(path)
+
+    # Absolute ceiling on addresses a module may expand a netblock into,
+    # whatever the user's maxnetblock/maxsubnet options say.
+    NETBLOCK_HARD_MAX_HOSTS = 65536
+
+    @staticmethod
+    def netblockWithinLimit(netblock, max_prefix) -> bool:
+        """Check a netblock is small enough to expand into per-address lookups.
+
+        Bounds the work by address count rather than trusting the event type:
+        an IPv6 netblock checked against an IPv4-scale limit (0-32) gets the
+        equivalent IPv6 limit (max_prefix + 96), so a mislabelled or hostile
+        IPv6 prefix can never expand to 2^64 hosts. Malformed input and
+        out-of-range limits fail closed, and nothing larger than
+        NETBLOCK_HARD_MAX_HOSTS addresses is ever allowed.
+
+        Args:
+            netblock: CIDR string or netaddr.IPNetwork
+            max_prefix: smallest allowed prefix length (e.g. 24 for /24)
+
+        Returns:
+            bool: the netblock may be expanded
+        """
+        try:
+            net = netaddr.IPNetwork(str(netblock))
+            max_prefix = int(max_prefix)
+        except Exception:
+            return False
+
+        bits = 32 if net.version == 4 else 128
+        if net.version == 6 and 0 <= max_prefix <= 32:
+            max_prefix += 96
+        if not 0 <= max_prefix <= bits:
+            return False
+        if net.prefixlen < max_prefix:
+            return False
+        return net.size <= SpiderFootHelpers.NETBLOCK_HARD_MAX_HOSTS
 
     @staticmethod
     def dataFile(name: str, legacyName: str) -> str:
