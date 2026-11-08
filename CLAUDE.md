@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Floodplain is a fork of **SpiderFoot 4.0** — an OSINT (open source intelligence) automation tool. It runs 200+ pluggable collection modules in a publisher/subscriber pipeline against a target (domain, IP, email, phone, username, bitcoin address, etc.), stores findings in SQLite, and applies a YAML-driven correlation engine. It exposes both a CherryPy web UI and a CLI.
 
-The rebrand from "SpiderFoot" to "Floodplain" is **only partially done**: `VERSION` reads `Floodplain 4.0.0` and `sf.py` prints the Floodplain name, but the Python package is still `spiderfoot/`, modules still use the `sfp_` prefix, entrypoints are still `sf*.py`, and ~5000 `spiderfoot` string references remain across the tree. Do not assume a name is wrong just because it says "spiderfoot" — that is the current expected state. See `ROADMAP.md` for the planned migration order.
+Versioning restarted at `0.0.1` (SemVer pre-1.0; bump `VERSION`, `spiderfoot/__version__.py`, `sfcli.py` and the README badge together — `test/unit/test_version_consistency.py` enforces it). The rebrand from "SpiderFoot" to "Floodplain" is **only partially done**: `VERSION` reads `Floodplain 0.0.1` and `sf.py` prints the Floodplain name, but the Python package is still `spiderfoot/`, modules still use the `sfp_` prefix, entrypoints are still `sf*.py`, and ~5000 `spiderfoot` string references remain across the tree. Do not assume a name is wrong just because it says "spiderfoot" — that is the current expected state. See `ROADMAP.md` for the planned migration order.
 
 ## Commands
 

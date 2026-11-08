@@ -3,7 +3,7 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/geeknik/floodplain/master/LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.11+-green)](https://www.python.org)
-[![Stable Release](https://img.shields.io/badge/version-4.0-blue.svg)](https://github.com/geeknik/floodplain/releases/tag/v4.0)
+[![Stable Release](https://img.shields.io/badge/version-0.0.1-blue.svg)](https://github.com/geeknik/floodplain/releases/tag/v0.0.1)
 [![CI status](https://github.com/geeknik/floodplain/workflows/Tests/badge.svg)](https://github.com/geeknik/floodplain/actions?query=workflow%3A"Tests")
 [![Last Commit](https://img.shields.io/github/last-commit/geeknik/floodplain)](https://github.com/geeknik/floodplain/commits/master)
 [![Twitter Follow](https://img.shields.io/twitter/follow/geeknik?label=follow&style=social)](https://x.com/geeknik)
@@ -69,22 +69,24 @@ Floodplain's 200+ modules feed each other in a publisher/subscriber model to ens
 
 To install and run Floodplain, you need at least Python 3.11 and a number of Python libraries which you can install with `pip`. We recommend you install a packaged release since master will often have bleeding edge features and modules that aren't fully tested.
 
+Floodplain versions restart at `0.0.1` (SemVer, `0.MINOR.PATCH` until `1.0.0`). Tags `v4.0` and earlier in this repository are upstream SpiderFoot releases, not Floodplain.
+
 #### Stable build (packaged release):
 
 ```
- wget https://github.com/geeknik/Floodplain/archive/v4.0.tar.gz
- tar zxvf v4.0.tar.gz
- cd Floodplain-4.0
- pip3 install -r requirements.txt
+ wget https://github.com/geeknik/floodplain/archive/v0.0.1.tar.gz
+ tar zxvf v0.0.1.tar.gz
+ cd floodplain-0.0.1
+ pip3 install --require-hashes -r requirements.lock
  python3 ./sf.py -l 127.0.0.1:5001
 ```
 
 #### Development build (cloning git master branch):
 
 ```
- git clone https://github.com/geeknik/Floodplain.git
- cd Floodplain
- pip3 install -r requirements.txt
+ git clone https://github.com/geeknik/floodplain.git
+ cd floodplain
+ pip3 install --require-hashes -r requirements.lock
  python3 ./sf.py -l 127.0.0.1:5001
 ```
 

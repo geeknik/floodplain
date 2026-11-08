@@ -54,7 +54,7 @@ class bcolors:
 
 
 class SpiderFootCli(cmd.Cmd):
-    version = "4.0.0"
+    version = "0.0.1"  # must match spiderfoot/__version__.py (enforced by test_version_consistency.py)
     pipecmd = None
     output = None
     modules = []
