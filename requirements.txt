@@ -45,4 +45,4 @@ pyyaml==6.0.3
 # Transitive pins (not imported directly):
 #   soupsieve (via beautifulsoup4): 2.10 carries the 2026 CVE fixes and still
 #   supports every Python 3.11.x; 3.x/4.x require >=3.11.5 (breaks Debian 12's 3.11.2).
-soupsieve==2.10
+soupsieve==4.0
