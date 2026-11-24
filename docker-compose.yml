@@ -27,8 +27,12 @@ services:
       - spiderfoot-data:/var/lib/floodplain
     image: floodplain
     container_name: floodplain
+    environment:
+      # The container must listen on its network interface for port publishing;
+      # this explicit development override is safe only with the loopback bind below.
+      FLOODPLAIN_INSECURE_LISTEN: "1"
     ports:
-      - "5001:5001"
+      - "127.0.0.1:5001:5001"
     restart: unless-stopped
 
 volumes:
