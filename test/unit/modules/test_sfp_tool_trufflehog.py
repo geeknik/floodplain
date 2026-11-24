@@ -1,6 +1,8 @@
 import os
 import pytest
+import threading
 import unittest
+from subprocess import DEVNULL, PIPE
 from unittest.mock import patch
 
 from modules.sfp_tool_trufflehog import sfp_tool_trufflehog
@@ -114,7 +116,7 @@ REPO = "https://github.com/example-org/example-repo"
 class TestModuleToolTrufflehogV3(unittest.TestCase):
     """Parses real TruffleHog v3.99.8 output (throwaway repo; secret values replaced by placeholders)."""
 
-    def _run(self, stdout: bytes):
+    def _run(self, stdout: bytes, max_output_bytes=None):
         import tempfile
         from unittest.mock import MagicMock, patch
         exe = tempfile.NamedTemporaryFile(delete=False)
@@ -124,24 +126,47 @@ class TestModuleToolTrufflehogV3(unittest.TestCase):
         module.setTarget(SpiderFootTarget('example.com', 'INTERNET_NAME'))
         root = SpiderFootEvent('ROOT', 'example.com', '', '')
         evt = SpiderFootEvent('SOCIAL_MEDIA', f"GitHub: <SFURL>{REPO}</SFURL>", 'test', root)
+        if max_output_bytes is not None:
+            module.MAX_OUTPUT_BYTES = max_output_bytes
+
+        read_fd, write_fd = os.pipe()
         proc = MagicMock()
-        proc.communicate.return_value = (stdout, b"")
+        proc.stdout = os.fdopen(read_fd, "rb", buffering=0)
+        proc.poll.return_value = None
+        proc.wait.return_value = 0
+
+        def write_stdout():
+            try:
+                remaining = memoryview(stdout)
+                while remaining:
+                    written = os.write(write_fd, remaining)
+                    remaining = remaining[written:]
+            except BrokenPipeError:
+                pass
+            finally:
+                os.close(write_fd)
+
+        writer = threading.Thread(target=write_stdout, daemon=True)
+        writer.start()
         emitted = []
         with patch('modules.sfp_tool_trufflehog.Popen', return_value=proc) as popen, \
                 patch.object(module, 'notifyListeners', side_effect=emitted.append):
             module.handleEvent(evt)
+        writer.join(timeout=1)
+        self.assertFalse(writer.is_alive())
         os.unlink(exe.name)
-        return popen, emitted
+        return popen, emitted, proc
 
     def test_invokes_v3_cli_safely(self):
         with open(FIXTURE, "rb") as f:
-            popen, _ = self._run(f.read())
+            popen, _, _ = self._run(f.read())
         args = popen.call_args[0][0]
         self.assertEqual(args[1:], ['git', '--json', '--no-update', '--no-verification', '--', REPO])
+        self.assertEqual(popen.call_args.kwargs, {'stdout': PIPE, 'stderr': DEVNULL})
 
     def test_parses_real_v3_findings_and_masks_secrets(self):
         with open(FIXTURE, "rb") as f:
-            _, emitted = self._run(f.read())
+            _, emitted, _ = self._run(f.read())
         self.assertEqual([e.eventType for e in emitted], ['PASSWORD_COMPROMISED'] * 2)
         # TruffleHog scans concurrently, so result order is not stable.
         by_detector = {e.data.split("\n")[0]: e.data for e in emitted}
@@ -165,7 +190,7 @@ class TestModuleToolTrufflehogV3(unittest.TestCase):
             json.dumps({"DetectorName": "X<script>\nInjected: yes", "Raw": "abcdefgh",
                         "SourceMetadata": {"Data": {"Git": {"file": "a\nb<x>", "line": True, "commit": "c" * 500}}}}),
         ]
-        _, emitted = self._run("\n".join(bad).encode())
+        _, emitted, _ = self._run("\n".join(bad).encode())
         self.assertEqual(len(emitted), 2)
         hostile = emitted[1].data
         self.assertNotIn("<", hostile)
@@ -176,5 +201,20 @@ class TestModuleToolTrufflehogV3(unittest.TestCase):
     def test_findings_are_capped(self):
         import json
         row = json.dumps({"DetectorName": "X", "Raw": "secretvalue"})
-        _, emitted = self._run(("\n".join([row] * 1000)).encode())
+        _, emitted, proc = self._run(("\n".join([row] * 1000)).encode())
         self.assertEqual(len(emitted), sfp_tool_trufflehog.MAX_FINDINGS)
+        proc.kill.assert_called_once_with()
+        proc.wait.assert_called()
+
+    def test_output_bytes_are_capped_before_suffix_is_parsed(self):
+        import json
+        first = (json.dumps({"DetectorName": "First", "Raw": "secretvalue"}) + "\n").encode()
+        second = (json.dumps({"DetectorName": "Second", "Raw": "secretvalue"}) + "\n").encode()
+
+        _, emitted, proc = self._run(first + second, max_output_bytes=len(first) + 5)
+
+        self.assertEqual([event.data.split("\n")[0] for event in emitted], [
+            "TruffleHog: First secret (unverified)",
+        ])
+        proc.kill.assert_called_once_with()
+        proc.wait.assert_called()
