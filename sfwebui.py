@@ -1133,7 +1133,7 @@ class SpiderFootWebUi:
             HTTPRedirect: redirect to scan settings
         """
         if str(token) != str(self.token):
-            return self.error(f"Invalid token ({token})")
+            return self.error("Invalid token")
 
         # configFile seems to get set even if a file isn't uploaded
         if configFile and configFile.file:
