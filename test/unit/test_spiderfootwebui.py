@@ -322,6 +322,16 @@ class TestSpiderFootWebUi(unittest.TestCase):
         self.assertIsInstance(scan_error, str)
         self.assertIn("example message", scan_error)
 
+    def test_error_should_escape_message(self):
+        opts = self.default_options
+        opts['__modules__'] = dict()
+        sfwebui = SpiderFootWebUi(self.web_default_options, opts)
+
+        message = "<script>alert(1)</script>"
+        scan_error = sfwebui.error(message)
+        self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", scan_error)
+        self.assertNotIn(message, scan_error)
+
     def test_scandelete_invalid_scanid_should_return_an_error(self):
         """
         Test scandelete(self, id)
@@ -340,9 +350,11 @@ class TestSpiderFootWebUi(unittest.TestCase):
         opts = self.default_options
         opts['__modules__'] = dict()
         sfwebui = SpiderFootWebUi(self.web_default_options, opts)
-        save_settings = sfwebui.savesettings(None, "invalid token", None)
+        token = "<script>alert(1)</script>"
+        save_settings = sfwebui.savesettings(None, token, None)
         self.assertIsInstance(save_settings, str)
         self.assertIn("Invalid token", save_settings)
+        self.assertNotIn(token, save_settings)
 
     @unittest.skip("todo")
     def test_savesettings(self):
