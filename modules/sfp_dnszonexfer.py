@@ -11,11 +11,15 @@
 # -------------------------------------------------------------------------------
 
 import re
+import time
 
 import dns.query
-import dns.zone
 
 from floodplain import SpiderFootEvent, SpiderFootPlugin
+
+
+class _ZoneTransferLimitExceeded(Exception):
+    pass
 
 
 class sfp_dnszonexfer(SpiderFootPlugin):
@@ -38,6 +42,16 @@ class sfp_dnszonexfer(SpiderFootPlugin):
 
     events = None
 
+    # AXFR data is controlled by the remote nameserver. Keep every retained
+    # representation and downstream event fan-out within a finite budget.
+    MAX_RECORDS = 10000
+    MAX_WIRE_BYTES = 10 * 1024 * 1024
+    MAX_DECODED_BYTES = 1024 * 1024
+    MAX_EVENT_BYTES = 1024 * 1024
+    MAX_NAME_EVENTS = 1000
+
+    INTERNET_NAME_PATTERN = re.compile(r"^(\S+)\.?\s+\d+\s+IN\s+[AC].*", re.IGNORECASE | re.DOTALL)
+
     def setup(self, sfc, userOpts=dict()):
         self.sf = sfc
         self.events = self.tempStorage()
@@ -51,6 +65,69 @@ class sfp_dnszonexfer(SpiderFootPlugin):
 
     def producedEvents(self):
         return ["RAW_DNS_RECORDS", "INTERNET_NAME"]
+
+    def _consumeZoneTransfer(self, transfer, name, deadline):
+        records = list()
+        seenRecords = set()
+        internetNames = list()
+        seenInternetNames = set()
+        recordCount = 0
+        wireBytes = 0
+        decodedBytes = 0
+        eventBytes = 0
+
+        for response in transfer:
+            if time.monotonic() > deadline:
+                raise _ZoneTransferLimitExceeded("total time limit exceeded")
+
+            # Include the two-byte TCP DNS message length prefix in the wire budget.
+            wireBytes += len(response.to_wire()) + 2
+            if wireBytes > self.MAX_WIRE_BYTES:
+                raise _ZoneTransferLimitExceeded("wire byte limit exceeded")
+
+            for rrset in response.answer:
+                if time.monotonic() > deadline:
+                    raise _ZoneTransferLimitExceeded("total time limit exceeded")
+
+                recordCount += len(rrset)
+                if recordCount > self.MAX_RECORDS:
+                    raise _ZoneTransferLimitExceeded("record limit exceeded")
+
+                row = rrset.to_text()
+                rowBytes = len(row.encode("utf-8"))
+                decodedBytes += rowBytes
+                if decodedBytes > self.MAX_DECODED_BYTES:
+                    raise _ZoneTransferLimitExceeded("decoded byte limit exceeded")
+
+                # dns.zone.from_xfr() deduplicated records, including the closing
+                # SOA. Preserve that behavior without materializing a zone.
+                if row in seenRecords:
+                    continue
+
+                separatorBytes = 1 if records else 0
+                if eventBytes + separatorBytes + rowBytes > self.MAX_EVENT_BYTES:
+                    raise _ZoneTransferLimitExceeded("raw event byte limit exceeded")
+
+                seenRecords.add(row)
+                records.append(row)
+                eventBytes += separatorBytes + rowBytes
+
+                for strdata in self.INTERNET_NAME_PATTERN.findall(row):
+                    if strdata.endswith("."):
+                        strdata = strdata[:-1]
+                    else:
+                        strdata = strdata + "." + name
+
+                    if strdata in seenInternetNames:
+                        continue
+
+                    if len(internetNames) >= self.MAX_NAME_EVENTS:
+                        raise _ZoneTransferLimitExceeded("internet name event limit exceeded")
+
+                    seenInternetNames.add(strdata)
+                    internetNames.append(strdata)
+
+        return records, internetNames
 
     def handleEvent(self, event):
         eventName = event.eventType
@@ -97,29 +174,22 @@ class sfp_dnszonexfer(SpiderFootPlugin):
         for name in self.getTarget().getNames():
             self.debug("Trying for name: " + name)
             try:
-                ret = list()
-                z = dns.zone.from_xfr(dns.query.xfr(nsip, name, timeout=int(self.opts["timeout"])))
-                names = list(z.nodes.keys())
-                for n in names:
-                    ret.append(z[n].to_text(n))
+                timeout = int(self.opts["timeout"])
+                deadline = time.monotonic() + timeout
+                transfer = dns.query.xfr(nsip, name, timeout=timeout, lifetime=timeout)
+                records, internetNames = self._consumeZoneTransfer(transfer, name, deadline)
 
-                evt = SpiderFootEvent("RAW_DNS_RECORDS", "\n".join(ret), self.__name__, parentEvent)
+                evt = SpiderFootEvent("RAW_DNS_RECORDS", "\n".join(records), self.__name__, parentEvent)
                 self.notifyListeners(evt)
 
                 # Try and pull out individual records
-                for row in ret:
-                    pat = re.compile(r"^(\S+)\.?\s+\d+\s+IN\s+[AC].*", re.IGNORECASE | re.DOTALL)
-                    grps = re.findall(pat, row)
-                    if len(grps) > 0:
-                        for strdata in grps:
-                            self.debug("Matched: " + strdata)
-                            if strdata.endswith("."):
-                                strdata = strdata[:-1]
-                            else:
-                                strdata = strdata + "." + name
+                for strdata in internetNames:
+                    self.debug("Matched: " + strdata)
+                    evt = SpiderFootEvent("INTERNET_NAME", strdata, self.__name__, parentEvent)
+                    self.notifyListeners(evt)
 
-                            evt = SpiderFootEvent("INTERNET_NAME", strdata, self.__name__, parentEvent)
-                            self.notifyListeners(evt)
+            except _ZoneTransferLimitExceeded as e:
+                self.info(f"Rejected DNS zone transfer for {eventData} ({name}): {e}")
 
             except Exception as e:
                 self.info(f"Unable to perform DNS zone transfer for {eventData} ({name}): {e}")
