@@ -12,17 +12,50 @@
 # -------------------------------------------------------------------------------
 
 import io
+import json
 import mimetypes
+import subprocess
+import sys
 
 import pypdf
 
-import docx
-
 import exifread
 
-import pptx
-
 from floodplain import SpiderFootEvent, SpiderFootPlugin
+from floodplain import office_parser
+
+
+_OFFICE_PARSER_TIMEOUT_SECONDS = 15
+_OFFICE_PARSER_OUTPUT_LIMIT = 16384
+
+
+def _parse_office_metadata(content, file_ext):
+    command = [sys.executable, office_parser.__file__, file_ext]
+    process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                               stderr=subprocess.DEVNULL, close_fds=True, start_new_session=True)
+    try:
+        output, _ = process.communicate(input=content, timeout=_OFFICE_PARSER_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired as error:
+        process.kill()
+        process.communicate()
+        raise ValueError("Office parser exceeded its wall-time limit") from error
+
+    if len(output) > _OFFICE_PARSER_OUTPUT_LIMIT:
+        raise ValueError("Office parser returned too much metadata")
+    try:
+        response = json.loads(output.decode("ascii"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("Office parser returned an invalid response") from error
+
+    if not isinstance(response, dict):
+        raise ValueError("Office parser returned an invalid response")
+    if process.returncode != 0 or response.get("status") != "ok":
+        detail = response.get("error", "Office parser stopped without a result")
+        raise ValueError(detail)
+    metadata = response.get("metadata")
+    if not isinstance(metadata, list) or any(not isinstance(value, str) for value in metadata):
+        raise ValueError("Office parser returned invalid metadata")
+    return metadata
 
 
 class sfp_filemeta(SpiderFootPlugin):
@@ -89,7 +122,7 @@ class sfp_filemeta(SpiderFootPlugin):
                 # typically large.
                 ret = self.sf.fetchUrl(eventData, timeout=self.opts['timeout'],
                                        useragent=self.opts['_useragent'], disableContentEncoding=True,
-                                       sizeLimit=10000000,
+                                       sizeLimit=office_parser.MAX_OFFICE_INPUT_SIZE,
                                        verify=False)
                 if ret['content'] is None:
                     self.error(f"Unable to fetch file for meta analysis: {eventData}")
@@ -114,29 +147,11 @@ class sfp_filemeta(SpiderFootPlugin):
                         self.error(f"Unable to parse meta data from: {eventData} ({e})")
                         return
 
-                if fileExt.lower() in ["docx"]:
+                if fileExt.lower() in ["docx", "pptx"]:
                     try:
-                        c = io.BytesIO(ret['content'])
-                        doc = docx.Document(c)
+                        data = _parse_office_metadata(ret['content'], fileExt.lower())
                         mtype = mimetypes.guess_type(eventData)[0]
                         self.debug("Office type: " + str(mtype))
-                        a = doc.core_properties.author
-                        c = doc.core_properties.comments
-                        data = [_f for _f in [a, c] if _f]
-                        meta = ", ".join(data)
-                    except Exception as e:
-                        self.error(f"Unable to process file: {eventData} ({e})")
-                        return
-
-                if fileExt.lower() in ["pptx"]:
-                    try:
-                        c = io.BytesIO(ret['content'])
-                        doc = pptx.Presentation(c)
-                        mtype = mimetypes.guess_type(eventData)[0]
-                        self.debug("Office type: " + str(mtype))
-                        a = doc.core_properties.author
-                        c = doc.core_properties.comments
-                        data = [_f for _f in [a, c] if _f]
                         meta = ", ".join(data)
                     except Exception as e:
                         self.error(f"Unable to process file: {eventData} ({e})")
