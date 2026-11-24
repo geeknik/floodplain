@@ -18,7 +18,8 @@
 #     into their own virtualenv, separate from Floodplain's /opt/venv.
 #
 # Build:   docker build -f Dockerfile.full -t floodplain-full .
-# Run:     docker run -p 5001:5001 --security-opt no-new-privileges floodplain-full
+# Run:     docker run -e FLOODPLAIN_INSECURE_LISTEN=1 -p 127.0.0.1:5001:5001 \
+#            --security-opt no-new-privileges floodplain-full
 #
 # To update a tool, change its version/commit AND checksum together.
 

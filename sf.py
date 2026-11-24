@@ -17,6 +17,7 @@ if sys.version_info < (3, 11):  # checked before third-party imports so the mess
     sys.exit("Floodplain requires Python 3.11 or higher.")
 
 import argparse
+import ipaddress
 import logging
 import multiprocessing as mp
 import os
@@ -41,6 +42,8 @@ from floodplain import __version__
 
 scanId = None
 dbh = None
+
+INSECURE_LISTEN_ENV = 'FLOODPLAIN_INSECURE_LISTEN'
 
 
 def main() -> None:
@@ -495,6 +498,17 @@ def start_scan(sfConfig: dict, sfModules: dict, args, loggingQueue) -> None:
     return
 
 
+def is_loopback_listener(host: str) -> bool:
+    """Return whether a web listener is restricted to the local host."""
+    if not isinstance(host, str):
+        return False
+
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
 def start_web_server(sfWebUiConfig: dict, sfConfig: dict, loggingQueue=None) -> None:
     """Start the web server so you can start looking at results
 
@@ -557,6 +571,20 @@ def start_web_server(sfWebUiConfig: dict, sfConfig: dict, loggingQueue=None) -> 
                 sys.exit(-1)
 
             secrets[u] = p
+
+    if not secrets and not is_loopback_listener(web_host):
+        if os.environ.get(INSECURE_LISTEN_ENV) != '1':
+            log.critical(
+                f"Refusing to start an unauthenticated web server on non-loopback listener {web_host}. "
+                f"Create {passwd_file} with one 'username:password' line per user, or set "
+                f"{INSECURE_LISTEN_ENV}=1 only for an intentionally isolated development deployment."
+            )
+            sys.exit(-1)
+
+        log.warning(
+            f"{INSECURE_LISTEN_ENV}=1 permits an unauthenticated non-loopback listener. "
+            "Do not publish this development deployment beyond the local host."
+        )
 
     if secrets:
         log.info("Enabling authentication based on supplied passwd file.")

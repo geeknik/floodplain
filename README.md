@@ -100,6 +100,8 @@ Floodplain keeps its database (`floodplain.db`), web UI credentials (`passwd`), 
 
 Cache and logs default to `cache/` and `logs/` inside the data directory and can be moved with `FLOODPLAIN_CACHE` / `FLOODPLAIN_LOGS` (legacy `SPIDERFOOT_CACHE` / `SPIDERFOOT_LOGS` also work). Floodplain refuses to start if a database or `passwd` file sits in the current directory.
 
+The web UI may run without a `passwd` file only on a loopback listener. For remote access, create a `passwd` file containing one `username:password` line per user and use TLS or an authenticated TLS terminator. `FLOODPLAIN_INSECURE_LISTEN=1` is an explicit development-only override for isolated deployments; the supplied Compose configuration combines it with a `127.0.0.1` host-port binding.
+
 ### WRITING CORRELATION RULES
 
 There exists a comprehensive write-up and reference of the correlation rule-set (inherited from SpiderFoot 4.0) [here](/correlations/README.md).

@@ -12,11 +12,13 @@
 # Usage:
 #
 #   sudo docker build -t floodplain .
-#   sudo docker run -p 5001:5001 --security-opt no-new-privileges floodplain
+#   sudo docker run -e FLOODPLAIN_INSECURE_LISTEN=1 -p 127.0.0.1:5001:5001 \
+#     --security-opt no-new-privileges floodplain
 #
 # Using Docker volume for floodplain data
 #
-#   sudo docker run -p 5001:5001 -v /mydir/floodplain:/var/lib/floodplain floodplain
+#   sudo docker run -e FLOODPLAIN_INSECURE_LISTEN=1 -p 127.0.0.1:5001:5001 \
+#     -v /mydir/floodplain:/var/lib/floodplain floodplain
 #
 # Using Floodplain remote command line with web server
 #
