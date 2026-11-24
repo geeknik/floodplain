@@ -36,6 +36,8 @@ class sfp_dnsresolve(SpiderFootPlugin):
         'netblocklookup': True,
         'maxnetblock': 24,
         'maxv6netblock': 120,
+        'maxhostnamesperinput': 256,
+        'maxhostnamesperscan': 10000,
     }
 
     # Option descriptions
@@ -44,8 +46,13 @@ class sfp_dnsresolve(SpiderFootPlugin):
         'validatereverse': "Validate that reverse-resolved hostnames still resolve back to that IP before considering them as aliases of your target.",
         'netblocklookup': "Look up all IPs on netblocks deemed to be owned by your target for possible hosts on the same target subdomain/domain?",
         'maxnetblock': "Maximum owned IPv4 netblock size to look up all IPs within (CIDR value, 24 = /24, 16 = /16, etc.)",
-        'maxv6netblock': "Maximum owned IPv6 netblock size to look up all IPs within (CIDR value, 24 = /24, 16 = /16, etc.)"
+        'maxv6netblock': "Maximum owned IPv6 netblock size to look up all IPs within (CIDR value, 24 = /24, 16 = /16, etc.)",
+        'maxhostnamesperinput': "Maximum unique hostnames to extract from one raw-data event.",
+        'maxhostnamesperscan': "Maximum raw-data hostnames to process during one scan."
     }
+
+    MAX_HOSTNAMES_PER_INPUT = 1000
+    MAX_HOSTNAMES_PER_SCAN = 100000
 
     events = None
     domresults = None
@@ -56,10 +63,28 @@ class sfp_dnsresolve(SpiderFootPlugin):
         self.events = self.tempStorage()
         self.domresults = self.tempStorage()
         self.hostresults = self.tempStorage()
+        self.rawHostnamesProcessed = 0
+        self.rawHostnameScanLimitLogged = False
         self.__dataSource__ = "DNS"
 
+        self.opts = dict(self.opts)
         for opt in list(userOpts.keys()):
             self.opts[opt] = userOpts[opt]
+
+    def hostnameLimit(self, option: str, hardLimit: int) -> int:
+        """Return a non-negative hostname limit capped at a hard maximum.
+
+        Args:
+            option (str): module option containing the configured limit
+            hardLimit (int): maximum value accepted for the option
+
+        Returns:
+            int: safe hostname processing limit
+        """
+        try:
+            return min(max(int(self.opts[option]), 0), hardLimit)
+        except (KeyError, TypeError, ValueError):
+            return 0
 
     def enrichTarget(self, target):
         ret = list()
@@ -366,6 +391,9 @@ class sfp_dnsresolve(SpiderFootPlugin):
                 return
 
             data = urllib.parse.unquote(eventData).lower()
+            inputHostnames = set()
+            inputLimit = self.hostnameLimit('maxhostnamesperinput', self.MAX_HOSTNAMES_PER_INPUT)
+            scanLimit = self.hostnameLimit('maxhostnamesperscan', self.MAX_HOSTNAMES_PER_SCAN)
             # We get literal \n from RAW_RIR_DATA in cases where JSON responses
             # have been str()'d, breaking interpretation of hostnames.
             if eventName == 'RAW_RIR_DATA':
@@ -408,6 +436,28 @@ class sfp_dnsresolve(SpiderFootPlugin):
                                 m = match[1:]
                             else:
                                 m = match
+
+                            if m in inputHostnames:
+                                continue
+
+                            if len(inputHostnames) >= inputLimit:
+                                self.info(
+                                    f"Maximum hostnames extracted from one input ({inputLimit}) reached; "
+                                    "remaining hostnames were skipped."
+                                )
+                                return
+
+                            if self.rawHostnamesProcessed >= scanLimit:
+                                if not self.rawHostnameScanLimitLogged:
+                                    self.info(
+                                        f"Maximum raw-data hostnames processed for this scan ({scanLimit}) reached; "
+                                        "remaining hostnames were skipped."
+                                    )
+                                    self.rawHostnameScanLimitLogged = True
+                                return
+
+                            inputHostnames.add(m)
+                            self.rawHostnamesProcessed += 1
                             self.processHost(m, parentEvent, False)
 
                     offset = data.find(name, start + len(chunkhost))
