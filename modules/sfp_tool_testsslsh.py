@@ -15,6 +15,7 @@ import os
 import sys
 import json
 import tempfile
+from contextlib import suppress
 from netaddr import IPNetwork
 from subprocess import PIPE, Popen, TimeoutExpired
 
@@ -140,13 +141,11 @@ class sfp_tool_testsslsh(SpiderFootPlugin):
         if eventName != "INTERNET_NAME":
             # Might be a subnet within a subnet or IP within a subnet
             for addr in self.results:
-                try:
+                # self.results will also contain hostnames.
+                with suppress(BaseException):
                     if IPNetwork(eventData) in IPNetwork(addr):
                         self.debug(f"Skipping {eventData} as already within a scanned range.")
                         return
-                except BaseException:
-                    # self.results will also contain hostnames
-                    continue
 
         # If we weren't passed a netblock, this will be empty
         if not targets:

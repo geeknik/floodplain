@@ -15,6 +15,7 @@ import json
 import os
 import selectors
 import time
+from contextlib import suppress
 from subprocess import DEVNULL, PIPE, Popen, TimeoutExpired
 from urllib.parse import urlparse
 
@@ -205,18 +206,19 @@ class sfp_tool_trufflehog(SpiderFootPlugin):
         # https://evil.com/?x=github.com/ or https://github.com.evil.com/, so it is
         # not a sound trust boundary (CWE-20, incomplete URL substring sanitization).
         # The parsed-hostname allowlist below is the single authoritative gate.
+        extraction_failed = object()
         if eventName == "SOCIAL_MEDIA":
-            try:
+            url = extraction_failed
+            with suppress(BaseException):
                 url = eventData.split(": ")[1].replace("<SFURL>", "").replace("</SFURL>", "")
-            except BaseException:
-                self.debug("Unable to extract repository URL, skipping.")
-                return
         elif eventName == "PUBLIC_CODE_REPO" and self.opts['allrepos']:
-            try:
+            url = extraction_failed
+            with suppress(BaseException):
                 url = eventData.split("\n")[1].replace("URL: ", "")
-            except BaseException:
-                self.debug("Unable to extract repository URL, skipping.")
-                return
+
+        if url is extraction_failed:
+            self.debug("Unable to extract repository URL, skipping.")
+            return
 
         if not url:
             return
@@ -315,9 +317,11 @@ class sfp_tool_trufflehog(SpiderFootPlugin):
         row = row.strip()
         if not row.startswith("{"):
             return None
-        try:
+        invalid_json = object()
+        rowjson = invalid_json
+        with suppress(ValueError):
             rowjson = json.loads(row)
-        except ValueError:
+        if rowjson is invalid_json:
             self.debug("Skipping non-JSON trufflehog output line.")
             return None
         if not isinstance(rowjson, dict) or "DetectorName" not in rowjson:
