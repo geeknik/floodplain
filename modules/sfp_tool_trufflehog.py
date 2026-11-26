@@ -13,8 +13,10 @@
 
 import json
 import os
+import selectors
+import time
 from contextlib import suppress
-from subprocess import PIPE, Popen, TimeoutExpired
+from subprocess import DEVNULL, PIPE, Popen, TimeoutExpired
 from urllib.parse import urlparse
 
 from floodplain import SpiderFootPlugin, SpiderFootEvent
@@ -53,6 +55,8 @@ class sfp_tool_trufflehog(SpiderFootPlugin):
     # Bounds on untrusted tool output.
     MAX_FINDINGS = 500
     MAX_OUTPUT_BYTES = 20 * 1024 * 1024
+    READ_CHUNK_BYTES = 64 * 1024
+    PROCESS_TIMEOUT_SECONDS = 600
 
     results = None
     errorState = False
@@ -73,6 +77,103 @@ class sfp_tool_trufflehog(SpiderFootPlugin):
 
     def producedEvents(self):
         return ['PASSWORD_COMPROMISED']
+
+    @staticmethod
+    def _kill_and_reap(process):
+        """Stop a child process and release its process-table entry.
+
+        Args:
+            process: subprocess to stop
+        """
+        if process.poll() is None:
+            try:
+                process.kill()
+            except ProcessLookupError:
+                pass
+        process.wait()
+
+    def _emit_output_row(self, row: bytes, url: str, event) -> bool:
+        """Parse and emit one complete TruffleHog JSONL record.
+
+        Args:
+            row (bytes): one complete output record
+            url (str): repository URL that was scanned
+            event: source SpiderFoot event
+
+        Returns:
+            bool: whether the record produced a finding
+        """
+        descr = self.describeFinding(row.decode('utf-8', errors='replace'), url)
+        if descr is None:
+            return False
+        evt = SpiderFootEvent('PASSWORD_COMPROMISED', descr, self.__name__, event)
+        self.notifyListeners(evt)
+        return True
+
+    def _stream_process_output(self, process, url: str, event):
+        """Read bounded JSONL output while enforcing the process deadline.
+
+        Args:
+            process: running TruffleHog subprocess
+            url (str): repository URL that was scanned
+            event: source SpiderFoot event
+        """
+        deadline = time.monotonic() + self.PROCESS_TIMEOUT_SECONDS
+        buffered = bytearray()
+        output_bytes = 0
+        findings = 0
+
+        with selectors.DefaultSelector() as selector:
+            selector.register(process.stdout, selectors.EVENT_READ)
+            while output_bytes < self.MAX_OUTPUT_BYTES:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0 or not selector.select(remaining):
+                    self._kill_and_reap(process)
+                    self.debug(f"Timed out waiting for trufflehog to finish on {url}")
+                    return
+
+                read_size = min(self.READ_CHUNK_BYTES, self.MAX_OUTPUT_BYTES - output_bytes)
+                chunk = os.read(process.stdout.fileno(), read_size)
+                if not chunk:
+                    if buffered and self._emit_output_row(bytes(buffered), url, event):
+                        findings += 1
+                    if findings >= self.MAX_FINDINGS:
+                        self._kill_and_reap(process)
+                        self.info(f"Stopping after {self.MAX_FINDINGS} trufflehog findings for {url}")
+                        return
+
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        self._kill_and_reap(process)
+                        self.debug(f"Timed out waiting for trufflehog to finish on {url}")
+                        return
+                    try:
+                        process.wait(timeout=remaining)
+                    except TimeoutExpired:
+                        self._kill_and_reap(process)
+                        self.debug(f"Timed out waiting for trufflehog to finish on {url}")
+                        return
+                    if output_bytes == 0:
+                        self.debug(f"trufflehog returned no output for {url}")
+                    return
+
+                output_bytes += len(chunk)
+                search_from = len(buffered)
+                buffered.extend(chunk)
+                newline = buffered.find(b"\n", search_from)
+                while newline >= 0:
+                    row = bytes(buffered[:newline])
+                    del buffered[:newline + 1]
+                    if self._emit_output_row(row, url, event):
+                        findings += 1
+                        if findings >= self.MAX_FINDINGS:
+                            self._kill_and_reap(process)
+                            self.info(f"Stopping after {self.MAX_FINDINGS} trufflehog findings for {url}")
+                            return
+                    newline = buffered.find(b"\n")
+
+        self._kill_and_reap(process)
+        self.info(f"Stopping after {self.MAX_OUTPUT_BYTES} bytes of trufflehog output for {url}")
 
     def handleEvent(self, event):
         eventName = event.eventType
@@ -151,34 +252,23 @@ class sfp_tool_trufflehog(SpiderFootPlugin):
         # third-party services. --no-update: never self-update a pinned binary.
         # "--" marks end-of-options so the URL is always a positional argument.
         args = [exe, 'git', '--json', '--no-update', '--no-verification', '--', url]
+        p = None
         try:
-            p = Popen(args, stdout=PIPE, stderr=PIPE)
-            out, _ = p.communicate(input=None, timeout=600)
-        except TimeoutExpired:
-            p.kill()
-            p.communicate()
-            self.debug(f"Timed out waiting for trufflehog to finish on {url}")
-            return
+            # stderr is intentionally discarded so diagnostics cannot fill a
+            # second in-memory buffer or block the child while stdout is read.
+            p = Popen(args, stdout=PIPE, stderr=DEVNULL)
+            self._stream_process_output(p, url, event)
         except Exception as e:
+            if p is not None:
+                try:
+                    self._kill_and_reap(p)
+                except Exception:
+                    pass
             self.error(f"Unable to run trufflehog: {e}")
             return
-
-        if not out:
-            self.debug(f"trufflehog returned no output for {url}")
-            return
-
-        stdout = out[:self.MAX_OUTPUT_BYTES].decode('utf-8', errors='replace')
-        findings = 0
-        for row in stdout.split("\n"):
-            descr = self.describeFinding(row, url)
-            if descr is None:
-                continue
-            evt = SpiderFootEvent('PASSWORD_COMPROMISED', descr, self.__name__, event)
-            self.notifyListeners(evt)
-            findings += 1
-            if findings >= self.MAX_FINDINGS:
-                self.info(f"Stopping after {self.MAX_FINDINGS} trufflehog findings for {url}")
-                break
+        finally:
+            if p is not None and p.stdout is not None:
+                p.stdout.close()
 
     @staticmethod
     def maskSecret(secret) -> str:

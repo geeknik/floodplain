@@ -55,6 +55,9 @@ class sfp_tool_testsslsh(SpiderFootPlugin):
         'mincve': "Only report CVEs equal to or higher than this level, must be either LOW, MEDIUM, HIGH or CRITICAL."
     }
 
+    # Bounds on untrusted tool output.
+    MAX_OUTPUT_BYTES = 20 * 1024 * 1024
+
     results = None
     errorState = False
 
@@ -152,55 +155,61 @@ class sfp_tool_testsslsh(SpiderFootPlugin):
             self.results[target] = True
 
             # Create a temporary output file
-            _, fname = tempfile.mkstemp("testssl.json")
-
-            args = [
-                exe,
-                "-U",
-                "--connect-timeout",
-                "5",
-                "--openssl-timeout",
-                "5",
-                "--severity",
-                self.opts['mincve'].upper().strip(),
-                "--jsonfile",
-                fname,
-                target
-            ]
+            fd, fname = tempfile.mkstemp("testssl.json")
             try:
-                p = Popen(args, stdout=PIPE, stderr=PIPE)
-                out, stderr = p.communicate(input=None, timeout=300)
-                stdout = out.decode(sys.stdin.encoding)
-            except TimeoutExpired:
-                p.kill()
-                stdout, stderr = p.communicate()
-                self.debug(f"Timed out waiting for testssl.sh to finish on {target}")
-                continue
-            except Exception as e:
-                self.error(f"Unable to run testssl.sh: {e}")
-                os.unlink(fname)
-                continue
+                os.close(fd)
 
-            if p.returncode != 0:
-                if "Unable to open a socket" in stdout:
-                    self.debug(f"Unable to read testssl.sh output for {target}: Unable to connect")
-                else:
-                    self.error(f"Unable to read testssl.sh output for {target}: Internal error")
-                os.unlink(fname)
-                continue
+                args = [
+                    exe,
+                    "-U",
+                    "--connect-timeout",
+                    "5",
+                    "--openssl-timeout",
+                    "5",
+                    "--severity",
+                    self.opts['mincve'].upper().strip(),
+                    "--jsonfile",
+                    fname,
+                    target
+                ]
+                try:
+                    p = Popen(args, stdout=PIPE, stderr=PIPE)
+                    out, stderr = p.communicate(input=None, timeout=300)
+                    stdout = out.decode(sys.stdin.encoding)
+                except TimeoutExpired:
+                    p.kill()
+                    p.communicate()
+                    self.debug(f"Timed out waiting for testssl.sh to finish on {target}")
+                    continue
+                except Exception as e:
+                    self.error(f"Unable to run testssl.sh: {e}")
+                    continue
 
-            if not stdout:
-                self.debug(f"testssl.sh returned no output for {target}")
-                os.unlink(fname)
-                continue
+                if p.returncode != 0:
+                    if "Unable to open a socket" in stdout:
+                        self.debug(f"Unable to read testssl.sh output for {target}: Unable to connect")
+                    else:
+                        self.error(f"Unable to read testssl.sh output for {target}: Internal error")
+                    continue
 
-            try:
-                with open(fname, "r") as f:
-                    result_json = json.loads(f.read())
-                os.unlink(fname)
-            except Exception as e:
-                self.error(f"Could not parse testssl.sh output as JSON: {e}\nstderr: {stderr}\nstdout: {stdout}")
-                continue
+                if not stdout:
+                    self.debug(f"testssl.sh returned no output for {target}")
+                    continue
+
+                try:
+                    if os.path.getsize(fname) > self.MAX_OUTPUT_BYTES:
+                        self.error(f"testssl.sh output for {target} exceeds {self.MAX_OUTPUT_BYTES} bytes")
+                        continue
+                    with open(fname, "r") as f:
+                        result_json = json.loads(f.read())
+                except Exception as e:
+                    self.error(f"Could not parse testssl.sh output as JSON: {e}\nstderr: {stderr}\nstdout: {stdout}")
+                    continue
+            finally:
+                try:
+                    os.unlink(fname)
+                except FileNotFoundError:
+                    pass
 
             if not result_json:
                 self.debug(f"testssl.sh returned no output for {target}")
