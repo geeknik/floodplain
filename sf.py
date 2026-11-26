@@ -499,7 +499,14 @@ def start_scan(sfConfig: dict, sfModules: dict, args, loggingQueue) -> None:
 
 
 def is_loopback_listener(host: str) -> bool:
-    """Return whether a web listener is restricted to the local host."""
+    """Return whether a web listener is restricted to the local host.
+
+    Args:
+        host (str): listener address to validate
+
+    Returns:
+        bool: whether the address is an IP loopback address
+    """
     if not isinstance(host, str):
         return False
 

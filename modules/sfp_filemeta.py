@@ -11,18 +11,95 @@
 # Licence:     MIT
 # -------------------------------------------------------------------------------
 
+import concurrent.futures
+from contextlib import suppress
 import io
+import json
 import mimetypes
+import subprocess
+import sys
+import time
 
 import pypdf
 
-import docx
-
 import exifread
 
-import pptx
-
 from floodplain import SpiderFootEvent, SpiderFootPlugin
+from floodplain import office_parser
+
+
+_OFFICE_PARSER_TIMEOUT_SECONDS = 15
+
+
+def _write_office_parser_input(stream, content):
+    try:
+        with suppress(BrokenPipeError):
+            stream.write(content)
+            stream.flush()
+    finally:
+        with suppress(BrokenPipeError):
+            stream.close()
+
+
+def _remaining_parser_time(deadline):
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise concurrent.futures.TimeoutError
+    return remaining
+
+
+def _stop_office_parser(process):
+    if process.poll() is None:
+        with suppress(ProcessLookupError):
+            process.kill()
+        process.wait()
+
+
+def _exchange_office_parser(process, content):
+    deadline = time.monotonic() + _OFFICE_PARSER_TIMEOUT_SECONDS
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        input_future = executor.submit(_write_office_parser_input, process.stdin, content)
+        output_future = executor.submit(
+            process.stdout.read, office_parser.MAX_OFFICE_OUTPUT_SIZE + 1,
+        )
+        try:
+            output = output_future.result(timeout=_remaining_parser_time(deadline))
+            if len(output) > office_parser.MAX_OFFICE_OUTPUT_SIZE:
+                raise ValueError("Office parser returned too much metadata")
+            input_future.result(timeout=_remaining_parser_time(deadline))
+            process.wait(timeout=_remaining_parser_time(deadline))
+        except (concurrent.futures.TimeoutError, subprocess.TimeoutExpired) as error:
+            _stop_office_parser(process)
+            raise ValueError("Office parser exceeded its wall-time limit") from error
+        except Exception:
+            _stop_office_parser(process)
+            raise
+    return output
+
+
+def _parse_office_metadata(content, file_ext):
+    if len(content) > office_parser.MAX_OFFICE_INPUT_SIZE:
+        raise ValueError("Office document exceeds its compressed-size limit")
+
+    command = [sys.executable, office_parser.__file__, file_ext]
+    process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                               stderr=subprocess.DEVNULL, close_fds=True, start_new_session=True)
+    output = _exchange_office_parser(process, content)
+
+    try:
+        response = json.loads(output.decode("ascii"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("Office parser returned an invalid response") from error
+
+    if not isinstance(response, dict):
+        raise ValueError("Office parser returned an invalid response")
+    if process.returncode != 0 or response.get("status") != "ok":
+        detail = response.get("error", "Office parser stopped without a result")
+        raise ValueError(detail)
+    metadata = response.get("metadata")
+    if not isinstance(metadata, list) or any(not isinstance(value, str) for value in metadata):
+        raise ValueError("Office parser returned invalid metadata")
+    return metadata
 
 
 class sfp_filemeta(SpiderFootPlugin):
@@ -54,6 +131,7 @@ class sfp_filemeta(SpiderFootPlugin):
         self.results = self.tempStorage()
         self.__dataSource__ = "Target Website"
 
+        self.opts = dict(self.opts)
         for opt in list(userOpts.keys()):
             self.opts[opt] = userOpts[opt]
 
@@ -89,7 +167,7 @@ class sfp_filemeta(SpiderFootPlugin):
                 # typically large.
                 ret = self.sf.fetchUrl(eventData, timeout=self.opts['timeout'],
                                        useragent=self.opts['_useragent'], disableContentEncoding=True,
-                                       sizeLimit=10000000,
+                                       sizeLimit=office_parser.MAX_OFFICE_INPUT_SIZE,
                                        verify=False)
                 if ret['content'] is None:
                     self.error(f"Unable to fetch file for meta analysis: {eventData}")
@@ -114,29 +192,11 @@ class sfp_filemeta(SpiderFootPlugin):
                         self.error(f"Unable to parse meta data from: {eventData} ({e})")
                         return
 
-                if fileExt.lower() in ["docx"]:
+                if fileExt.lower() in ["docx", "pptx"]:
                     try:
-                        c = io.BytesIO(ret['content'])
-                        doc = docx.Document(c)
+                        data = _parse_office_metadata(ret['content'], fileExt.lower())
                         mtype = mimetypes.guess_type(eventData)[0]
                         self.debug("Office type: " + str(mtype))
-                        a = doc.core_properties.author
-                        c = doc.core_properties.comments
-                        data = [_f for _f in [a, c] if _f]
-                        meta = ", ".join(data)
-                    except Exception as e:
-                        self.error(f"Unable to process file: {eventData} ({e})")
-                        return
-
-                if fileExt.lower() in ["pptx"]:
-                    try:
-                        c = io.BytesIO(ret['content'])
-                        doc = pptx.Presentation(c)
-                        mtype = mimetypes.guess_type(eventData)[0]
-                        self.debug("Office type: " + str(mtype))
-                        a = doc.core_properties.author
-                        c = doc.core_properties.comments
-                        data = [_f for _f in [a, c] if _f]
                         meta = ", ".join(data)
                     except Exception as e:
                         self.error(f"Unable to process file: {eventData} ({e})")
